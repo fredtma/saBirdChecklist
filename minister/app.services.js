@@ -161,13 +161,14 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
       } else if(notitia.iota[0]){
          cons = notitia.iota[0];
          if(isset(cons.child_))     angular.extend($scope.child,cons.child_);
+         if(isset(cons.links_))     angular.extend($scope.links,cons.links_);
          return cons;
       }
       return false;
    }
    function sigma(jesua){ if($db===false) return;
 
-      RECORD = new $db.get({"jesua":jesua},function(server){iyona.info('SERVER',server,typeof server);
+      RECORD = new $db.get({"jesua":jesua},function(server){iyona.info('sigma',server,typeof server);
          if(online.verify(server)===false) { iyona.err("Failed to verify."); return;}
          var iota = server.notitia.iota[0];
          setConsuetudinem(server.notitia);
@@ -178,7 +179,7 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
    }//end function sigma: list one item
    function sigmaList(jesua){ if($db===false) return;
 
-      RECORD = new $db.get({"jesua":jesua},function(server){
+      RECORD = new $db.get(function(server){iyona.info('sigmaList',server,typeof server);
          if(online.verify(server)===false)return;
          var iota = server.notitia.iota;
          $scope.parent = curDisplay;
@@ -519,16 +520,23 @@ function online($resource,$http,$q) {
 
       function get(jesua,callback){
          that.$idb.then(function($idb){//read after idb is read
-            $idb.read(params.mensa,jesua).then(function(e,isCursor){
-               var cursor = e.target.result,server={"notitia":{"iota":[]}};
-               iyona.off('cursor',cursor,jesua,params,$idb.iRequest,e);
+
+            if(typeof jesua ==="object") jesua = jesua.jesua;
+            else if (typeof jesua ==="function"){callback=jesua; jesua=null;}
+            var server={"notitia":{"iota":[]}};
+
+            $idb.read(params.mensa,jesua,function(e,isCursor){
+               var cursor = e.target.result;
+               iyona.off('cursor',cursor,isCursor,jesua,params,e);
 
                if(isCursor){//with multiple row
-                  if(cursor){
+                  if(!cursor){
+                     callback(server);
+                  }else{
                      iyona.off('MULTY CURSOR',cursor.value,cursor);
                      server.notitia.iota.push(cursor.value);//use alphaMerge() if alpha, enum
                      cursor.continue();
-                  }else{ callback(server);}
+                  }
                }else if(isset(cursor)){//single read
                   iyona.off('SINGLE CURSOR',cursor.value);
                   server.notitia.iota[0] = cursor.value;//use alphaMerge() if alpha, enum
@@ -605,13 +613,13 @@ function online($resource,$http,$q) {
          var store=_store||"users",transaction=this.idb.transaction(store,"readwrite");
          var objectStore=transaction.objectStore(store);
          var request=objectStore.delete(_index);
-         request.onsuccess=function(e){iyona.on("Successfully iErased record.");if(_callback)_callback(e);deferred.resolve(e);}
+         request.onsuccess=function(e){iyona.on("Successfully iErased record.");if(_callback)_callback(e);deferred.resolve([e]);}
          request.onerror=function(e){iyona.err("failed to deleted record.",e);deferred.reject(request.error,store,e);}
          return promise;
       }
       //=========================================================================//
       function iRead(_store,_index,_callback,_passVar){
-         var deferred = $q.defer(),promise=deferred.promise,cursor=false;
+         var deferred = $q.defer(),promise=deferred.promise,cursor=false,using={};
 
          if(!$idb.iRequest) {
             iyona.err("No iRequest on reading "+_store,_store);
@@ -627,21 +635,22 @@ function online($resource,$http,$q) {
          var store=_store,transaction=$idb.idb.transaction(store),request;
          var objectStore=transaction.objectStore(store),ndx=null,order,keyRange=null;
 
-         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);}
-         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order"))order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);using.where=1;}
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order")){order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';using.order=1;}
 
-         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);//for the pk
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("top"))     {keyRange=IDBKeyRange.lowerBound(_index.top); request=ndx.openCursor(keyRange,order);//limit top
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);//limit bottome
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("between")) {keyRange=IDBKeyRange.bound(_index.between[0],_index.between[1],true,true); request=ndx.openCursor(keyRange,order);//between
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is"))      {request=ndx.get(_index.is);iyona.deb("IS",_index.is);//where field1=value
-         }else if(_index!==null&&angular.isArray(_index))                                    {request=objectStore.openCursor(_index);cursor=true;//where field1=value1 and field2=value2
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("like"))    {keyRange=IDBKeyRange.bound(_index.like,_index.like+'\uffff'); request=ndx.openCursor(keyRange,'prev');//where like...
-         }else if(ndx){request=ndx.openCursor(keyRange,order);
-         }else{request=objectStore.openCursor();cursor=true;}
+         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);using.get=1;//for the pk
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("top"))     {keyRange=IDBKeyRange.lowerBound(_index.top); request=ndx.openCursor(keyRange,order);using.top=1;//limit top
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);using.bot=1//limit bottome
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("between")) {keyRange=IDBKeyRange.bound(_index.between[0],_index.between[1],true,true); request=ndx.openCursor(keyRange,order);using.between=1;//between
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is"))      {request=ndx.get(_index.is);iyona.deb("IS",_index.is);using.is=1;//where field1=value
+         }else if(_index!==null&&angular.isArray(_index))                                    {request=objectStore.openCursor(_index);cursor=true;using.array=1;//where field1=value1 and field2=value2
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("like"))    {keyRange=IDBKeyRange.bound(_index.like,_index.like+'\uffff'); request=ndx.openCursor(keyRange,'prev');using.like=1;//where like...
+         }else if(ndx){request=ndx.openCursor(keyRange,order); using.ndx=1;
+         }else{request=objectStore.openCursor();cursor=true;using.all=1;}
 
-         request.onsuccess=function(e){if(_callback)_callback(e,cursor,_passVar); deferred.resolve(e,cursor,_passVar);}//e.target.result
-         request.oncomplete=function(e){iyona.on("Successfully iRead  addeding to "+store,e);}
+         request.onsuccess=function(e){ if(_callback)_callback(e,cursor,_passVar); deferred.resolve([e,cursor,_passVar]);}//e.target.result
+         //request.oncomplete=function(e){iyona.on("Successfully iRead to "+store,using,e);}
+         transaction.oncomplete=function(e){iyona.on("Successfully iRead transaction to "+store,using,e);}
          request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+request.error,e); deferred.reject(request.error,store,e);}
          return promise;
       }
@@ -668,8 +677,9 @@ function online($resource,$http,$q) {
 
          if(!_update){request=objectStore.add(_data);crud='inserted';}
          else {request=objectStore.put(_data);crud='updated';}
-         request.onsuccess=function(e){if(_display!==false)iyona.on("Successfully "+crud+" write to "+store);deferred.resolve(e);}
+         request.onsuccess=function(e){if(_display!==false)iyona.on("Successfully "+crud+" write to "+store);deferred.resolve([e]);}
          request.oncomplete=function(e){iyona.on("Successfully completed write to "+store+"::"+e.target.error.message);}
+         transaction.oncomplete=function(e){iyona.on("Successfully completed write transaction to "+store+"::"+e.target.error.message);}
          request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+e.target.error.message,_data);deferred.reject(e.target.error.message,store,_data,e);}
          return promise;
       }
