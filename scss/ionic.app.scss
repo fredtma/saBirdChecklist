@@ -1,0 +1,132 @@
+/*
+@fredtma
+To customize the look and feel of Ionic, you can override the variables
+in ionic's _variables.scss file.
+
+For example, you might change some of the default colors---:
+*/
+
+$light:                           #f3f3f3 !default;//#fff #f3f3f3
+$stable:                          #D6F5DF !default;//#f8f8f8
+$positive:                        #4DBD33 !default;//#387ef5 #574bdb #01A611
+$calm:                            #238e23 !default;//#11c1f3 #8962ed
+$balanced:                        #33cd5f !default;
+$energized:                       #dc8236 !default;//#ffc900 #dc8236
+$assertive:                       #c72202 !default;//#ef473a
+$royal:                           #946c45 !default;//#886aea #5b2c7a
+$dark:                            #1f1f21 !default;//#444 #1f1f21
+
+/*VARIABLES*/
+$button-calm-text:                #fff !default;
+$button-light-border:             #ddd !default;
+$button-stable-border:            darken($stable, 10%) !default;
+$item-divider-bg:                 $calm !default;//@fredtma:#f5f5f5
+$item-divider-color:              $stable !default;//@fredtma:#222
+$base-color:                      $royal !default;
+/*
+$light:                           #f3f3f3 !default;//#fff #f3f3f3
+$stable:                          #D6F5DF !default;
+$positive:                        #00FF49 !default;//#387ef5 #574bdb
+$calm:                            #33CD5F !default;//#11c1f3 #8962ed
+$balanced:                        #33cd5f !default;
+$energized:                       #dc8236 !default;//#ffc900 #dc8236
+$assertive:                       #c72202 !default;//#ef473a
+$royal:                           #7F807F !default;//#886aea #5b2c7a
+$dark:                            #1f1f21 !default;//#444 #1f1f21
+*/
+// The path for our ionicons font files, relative to the built CSS in www/css
+$ionicons-font-path: "../lib/ionic/fonts" !default;
+
+// Include all of Ionic
+//Netbean
+@import "../lib/ionic/scss/ionic";
+//Ionic
+//@import "www/lib/ionic/scss/ionic";
+
+/*******************************************************************************
+* MODIFICATIONS
+*******************************************************************************/
+
+/*ITEMS*/
+.item {
+  @include item-style(#ffffff, $calm, $royal);
+}
+// Item Divider
+.item-divider {
+  padding-top: ceil($item-padding / 2);
+  padding-bottom: ceil($item-padding / 2);
+  min-height: 30px;
+  background-color: $item-divider-bg;
+  color: $item-divider-color;
+  font-weight: 500;
+}
+/*FORM*/
+input,textarea {
+    @include border-radius(0);
+    @include flex(1, 0, 220px);
+    @include appearance(none);
+    margin: 0;
+    padding-right: 24px;
+    background-color: transparent;
+}
+
+/*******************************************************************************
+* COUSTOM
+*******************************************************************************/
+.link{cursor: pointer;}
+
+//LOGIN AVATAR
+.user-avatar{padding:0px; margin-top:-5px;
+   img {height:30px;width:30px;border-radius: 50%;}
+   h2,h3 {color:white;font-size:14px;margin:0px;padding:0px;font-weight: bold;}
+   h3 {font-size:12px;font-weight: normal; color:$stable;}
+}
+//ICON:: add a shadow to icons.
+.icon-shadow::before{text-shadow: 1px 0px 2px #999;}
+//ACTIONSHEET
+.action-sheet-title {padding: 10px;background:#000;padding-left: 100px;font-weight: bold; text-align: left;text-shadow: 2px 2px 5px #999;color: #ececec;font-size: 18px;}
+.action-sheet-group{.button{text-align: left;padding-left:100px;}}
+
+/*FORM:: validation************************************************************/
+form {.ng-dirty.ng-invalid{ border-bottom:1px solid #f00;}}//dirty and invalid
+form.isNotValide {.ng-invalid{ border-bottom:1px solid #f00;}}//submitted and invalid
+.item-floating-label{ background:transparent; .input-label.has-input{font-weight: bold;}}
+.item-stacked-label{background:transparent;}
+.item-toggle,.item-input.range{background:transparent;}
+.toggle .track{border-color:$positive;background-color:$positive;}
+
+/*SIDE-MENU********************************************************************/
+.menu-side .icon:before {font-size:24px; color:$calm}//change the size & color of the left menu icon
+.menu-side .assertive .icon:before {font-size:24px; color:$assertive}//change the size & color of the left menu icon log out
+.menu-side .item-complex{border-width: 0px; background-color:transparent; a {background-color:transparent;} &:last-child{border-width:1px;} }//remove the border of the left menu
+
+/*DASHBOARD********************************************************************/
+.dashboard-content .scroll,.dashboard-content .list{height:100%;}
+.dashboard-content .item{height:33.5%; text-align: center;}
+.dashboard-content .item:first-child{border-top:0;}
+.dashboard-content .item a{height:100%;}
+.dash-block {}
+.dashboard-content .item span:first-child,.dashboard-content .item span{vertical-align: middle;padding-top:10px; display:inline-block;text-transform: uppercase; font-size:70%; font-weight: bold; text-shadow: 1px 1px 1px rgba(250,250,250, 0.5);}
+.dashboard-content .item span:first-child{border-bottom:3px solid $positive;padding-bottom:5px;width:250px;color:$light; font-size:100%;}
+
+@media all and (min-width: 800px){
+   .dashboard-content .item:nth-child(1) a {background-image: url(../img/bcgr/birds-1280.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(2) a {background-image: url(../img/bcgr/lists-1280.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(3) a {background-image: url(../img/bcgr/profile-1280.jpg); background-size: 100% 100%}
+}
+@media all and (max-width: 768px){
+   .dashboard-content .item:nth-child(1) a {background-image: url(../img/bcgr/birds-640.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(2) a {background-image: url(../img/bcgr/lists-640.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(3) a {background-image: url(../img/bcgr/profile-640.jpg); background-size: 100% 100%}
+}
+@media all and (max-width: 480px){
+   .dashboard-content .item:nth-child(1) a {background-image: url(../img/bcgr/birds-480.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(2) a {background-image: url(../img/bcgr/lists-480.jpg); background-size: 100% 100%}
+   .dashboard-content .item:nth-child(3) a {background-image: url(../img/bcgr/profile-480.jpg); background-size: 100% 100%}
+}
+/*CONTENT**********************************************************************/
+.item-divider.item-button-right > .button { top: 2px;}//fixes the height of the title in the content page
+ion-content {background: -webkit-linear-gradient(90deg,#4DBD33 -9%, #D6F5FF 19%);  }/*add a green radient*/
+.block.badge {position: relative; top:auto; right:auto; border-radius: 0px; display:inline-block;}/*changes the badges to be square block next to each others*/
+.pane.has-header{ top:$bar-height;}
+.listBar {border-left: 7px solid $calm; box-shadow: 2px 2px 2px $calm;margin-bottom:5px;}

@@ -1,0 +1,46 @@
+<ion-view >
+   <ion-nav-title ng-bind="service.title"></ion-nav-title>
+   <ion-content has-header="true" has-bouncing="false" padding="false" on-swipe-up="module.action()">
+      <form name="dataForm" id="dataForm" novalidate ng-init="module.initForm(this)" ng-class="service.isValide">
+         <div class="list">
+            <div class="item item-icon-left item-divider"><i class="icon ion-ios7-photos-outline"></i>Profile Image</div>
+            <a class="item item-thumbnail-left">
+               <img id="profileImg" class="captureImg link" ng-src="{{father.img.alpha||'img/default.jpg'}}" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')" />
+               <button class="button icon-left ion-upload button-clear button-dark" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')">Upload image</button>
+               <h2>Avatar</h2><p>Tap image to edit.</p>
+            </a>
+            <input id="profileFile" name="profileFile" type="file" accept="image/jpeg" style="display:none" multiple placeholder="Profile Image" onchange="angular.element(this).scope().module.getPicture(event,'img',null,'profile.jpg')" />
+            <div class="item item-icon-left item-divider"><i class="icon ion-ios7-person-outline"></i>Profile Details</div><label class="item item-input item-floating-label">
+            <span class="input-label">Name & Surname</span><input required type="text" placeholder="Profile's Name" ng-model="service.name" name="name" autocomplete="name" ng-model-options="{ updateOn: 'blur' }" /></label>
+            <label class="item item-input item-floating-label"><span class="input-label">Email (Username)</span><input required type="email" placeholder="Your Email" ng-model="father.email" name="email" autocomplete="email"  /></label>
+            <label class="item item-input item-floating-label" ng-if="!father.jesua">
+               <span class="input-label">Password <small class="assertive" ng-if="dataForm.password.$error.pattern">({{service.patterns.pass1[1]}}).</small></span>
+               <input required ng-pattern="service.patterns.pass1[0]" type="password" placeholder="Password" name="password" ng-model="father.password"  />
+            </label>
+
+            <label class="item item-input item-stacked-label">
+               <span class="input-label">Gender</span>
+               <ion-toggle ng-model="father.gender" toggle-class="toggle-calm" style="border:none;"  >{{!father.gender?"Female":"Male"}}</ion-toggle>
+            </label>
+            <lable class="item item-input range range-royal">
+               <span style="width:100px">Birth Year: </span> <span class="input-label" ng-bind="service.year"></span>
+               <i class="icon ion-ios7-calendar-outline"></i>
+               <input type="range" name="year" min="1930" max="2020"  ng-model="service.year" ng-model-options="{ updateOn: 'default' }"  />
+               <i class="icon ion-ios7-calendar"></i>
+            </lable>
+            <lable class="item item-input range range-royal">
+               <span style="width:100px">Birth Month: </span><span class="input-label" ng-bind="service.month"></span>
+               <i class="icon ion-ios7-calendar-outline"></i>
+               <input type="range" name="month" min="1" max="12" ng-model="service.month" ng-model-options="{ updateOn: 'default change' }"  />
+               <i class="icon ion-ios7-calendar"></i>
+            </lable>
+            <lable class="item item-input range range-royal">
+               <span style="width:100px">Birth Day: </span><span class="input-label" ng-bind="service.day"></span>
+               <i class="icon ion-ios7-calendar-outline"></i>
+               <input type="range" name="day" min="1" max="31" ng-model="service.day" ng-model-options="{ updateOn: 'default' }"  />
+               <i class="icon ion-ios7-calendar"></i>
+            </lable>
+         </div>
+      </form>
+   </ion-content>
+</ion-view>

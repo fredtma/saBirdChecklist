@@ -1,0 +1,35 @@
+<ion-side-menus enable-menu-with-back-views="false">
+  <ion-side-menu-content edge-drag-threshold="false">
+    <ion-nav-bar class="bar-positive" align-title="left">
+      <ion-nav-back-button class="button-clear" style="margin-right:7px"><i class="icon ion-ios-arrow-back"></i> </ion-nav-back-button>
+
+      <ion-nav-buttons side="left"><button class="button button-icon button-clear ion-navicon" menu-toggle="left"></button></ion-nav-buttons>
+      <ion-nav-buttons side="right"><button menu-close class="button button-icon icon ion-log-out assertive-bg icon-shadow" ng-click="logoff()" ></button></ion-nav-buttons>
+    </ion-nav-bar>
+     <header ng-show="msg" class="bar bar-small bar-subheader bar-dark"><h5 id="notification" ng-class="msg.clss"  >{{msg.text}}</h5></header>
+    <ion-nav-view name="mainContent"></ion-nav-view>
+  </ion-side-menu-content>
+
+  <ion-side-menu side="left">
+    <ion-header-bar class="bar-positive" align-title="left">
+      <div class="row user-avatar link" ui-sref="main.profile({jesua:profile.jesua})"><!--ng-click="goTo('call.profile',{'jesua':profile.jesua})"-->
+         <div class="col col-20"><img ng-src="{{profile.avatar||'img/default.jpg'}}"/></div>
+         <div class="col col-80">
+            <h2 class="title-left" ng-bind="profile.givenname" >Name of user</h2>
+            <h3 class="title-left" ng-bind="profile.position" >Profession</h3>
+         </div>
+      </div>
+    </ion-header-bar>
+    <ion-content class="menu-side">
+      <ion-list>
+         <ion-item nav-clear menu-close href="#/main/dashboard" class="item item-icon-left royal"><i class="icon ion-ios-home"></i>Dashboard</ion-item>
+         <ion-item nav-clear menu-close href="#/main/birds" class="item item-icon-left royal"><i class="icon ion-ios-eye"></i>Sothern Africa Birds</ion-item>
+         <ion-item nav-clear menu-close href="#/main/lists/{{profile.operarius}}/list" class="item item-icon-left size-12 royal"><i class="icon ion-ios-paper"></i>My Lists</ion-item>
+         <ion-item nav-clear menu-close href="#/main/profile/{{profile.jesua}}" class="item item-icon-left royal"><i class="icon ion-ios-person"></i>Profile</ion-item>
+         <div class="item item-divider">Configuration</div>
+         <ion-item nav-clear menu-close href="#/settings" class="item item-icon-left royal"><i class="icon ion-ios-gear"></i>Settings</ion-item>
+         <ion-item nav-clear menu-close href="#" ng-click="logoff()" class="item item-icon-left assertive"><i class="icon ion-log-out"></i>Logout</ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-side-menu>
+</ion-side-menus>

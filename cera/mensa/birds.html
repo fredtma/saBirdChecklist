@@ -1,0 +1,35 @@
+<ion-view title="{{service.title}}">
+   <ion-content class="has-header" has-header="true" has-bouncing="true" padding="false" >
+      <div class="bar bar-header item-input" style="padding-left:auto;">
+        <label class="item-input-wrapper light-bg" >
+          <i class="icon ion-ios-search placeholder-icon"></i><input type="search" placeholder="Search" ng-model="search">
+        </label>
+        <button class="button button-clear button-dark " ng-click="search=null">Cancel</button>
+      </div>
+
+      <div class="item item-divider item-icon-left item-button-right">
+         <i class="icon ion-ios-eye"></i>
+         List of Birds in Southern Africa
+         <!--<button class="button button-clear button-assertive" style="right:60px;" ng-click="service.deleteItem = !service.deleteItem"><i class="icon ion-close-circled "></i></button>-->
+         <!--<button class="button button-clear button-stable" ui-sref="call.article({jesua:'create','field':'sub','search':'new item'})"><i class="icon ion-plus-circled "></i></button>-->
+      </div>
+      <ion-list show-reorder="false" can-swipe="true" show-delete="service.deleteItem" >
+         <!--<ion-item ng-repeat="father in generations|filter:search|limitTo:2" href="#/main/bird/{{father.name}}" class="item item-thumbnail-left item-text-wrap">-->
+         <ion-item class="item item-thumbnail-left item-text-wrap" ng-style="{height: '100px',width:'100%',left:'0',right:'0',border:'none'}"
+            collection-repeat="father in generations|filter:search|limitTo:900" collection-item-height="'100px'" collection-item-width="'100%'">
+            <img ng-src="{{father.path||'img/default.jpg'}}" />
+            <h2 ng-bind="father.name"></h2>
+            <p style="font-size:0.8em;color:#aaa;border-bottom: 2px solid #D6F5DF">
+               <span ng-if="father.region" class="block badge badge-light">Region: <strong ng-bind="father.region"></strong></span>
+               <span class="block badge badge-light">sasol4: <strong ng-bind="father.sasol4"></strong></span>
+               <span class="block badge badge-light">sasol: <strong ng-bind="father.sasol"></strong></span>
+               <span class="block badge badge-light">roberts6: <strong ng-bind="father.roberts6"></strong></span>
+               <span class="block badge badge-light">robertsVI: <strong ng-bind="father.robertsVI"></strong></span>
+            </p>
+            <ion-reorder-button class="ion-navicon" on-reorder="reorderItem(father, $fromIndex, $toIndex)"></ion-reorder-button>
+            <!--<ion-option-button ng-click="module.delete(father.sub,$index)" class=""><a style="padding-top:15px;" class="button button-icon icon ion-close-circled assertive"></a> </ion-option-button>-->
+            <ion-delete-button class="ion-close-circled" ng-click="module.delete(father.sub,$index)"></ion-delete-button>
+         </ion-item>
+      </ion-list>
+   </ion-content>
+</ion-view>

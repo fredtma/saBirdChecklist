@@ -1,0 +1,30 @@
+<ion-modal-view>
+   <ion-header-bar class="bar-positive nav-title-slide-ios" align-title="left">
+      <h1 class="title">Login</h1>
+      <div class="buttons">
+         <button class="button button-icon icon ion-ios-close-empty text-assertive" style="font-weight:bold; font-size:0.5em"  ng-click="logoff()"></button>
+      </div>
+   </ion-header-bar>
+   <ion-content scroll="false" padding="false">
+      <form id="userForm" name="dataForm" ng-submit="module.login()">
+         <div class="list">
+            <label class="item item-input item-floating-label" style="background-color: transparent">
+               <span class="input-label">Username</span>
+               <input type="text" ng-model="father.username" placeholder="Enter your email or username" required autofocus autocomplete="email">
+            </label>
+            <label class="item item-input item-floating-label" style="background-color: transparent">
+               <span class="input-label">Password</span>
+               <input type="password" ng-model="father.password" placeholder="Enter your password" required>
+            </label>
+         </div>
+         <div ng-bind="service.msg" style="padding:5px;" class="assertive"></div>
+      </form>
+   </ion-content>
+   <ion-footer-bar class="bar-dark nav-title-slide-ios" align-title="center">
+      <button form="userForm" class="button button-outline button-light icon-left ion-log-in" style="width:34%;min-width: 150px;" type="submit" >Login</button>
+      <button form="userForm" class="button button-outline button-light icon-left ion-person-add" style="width:33%;min-width: 150px;" type="button" ng-click="module.reg()">Register</button>
+      <button form="userForm" class="button button-outline button-light icon-left ion-sad" style="width:33%;min-width: 150px;" type="button" ng-click="module.forgot()">I forgot</button>
+   </ion-footer-bar>
+</ion-modal-view>
+
+
