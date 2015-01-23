@@ -31,8 +31,8 @@
          if(ionic.Platform.isWebView() && isset(navigator.splashscreen)) navigator.splashscreen.hide();
          //document.addEventListener("resume",function(){ iyona.info("Resuming from background"); });
          //document.addEventListener("pause",function(){ iyona.info("Application is in the background"); });
-         document.addEventListener("online",function(){ iyona.info("Application is in back Online"); sessionStorage.SITE_ONLINE=false; iyona.msg("Your are currently working offline",false,true); });
-         document.addEventListener("offline",function(){ iyona.info("Application is Offline"); sessionStorage.SITE_ONLINE=true; });
+         document.addEventListener("online",function(){ iyona.info("Application is in back Online"); sessionStorage.SITE_ONLINE=true; });
+         document.addEventListener("offline",function(){ iyona.info("Application is Offline"); sessionStorage.SITE_ONLINE=false; localStorage.offline= new Date().format('isoDateTime'); iyona.msg("Your are currently working offline",false,true); });
       });
    }
 })();

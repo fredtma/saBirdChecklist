@@ -14,6 +14,7 @@ self.addEventListener('message',function(e){
    else if (isset(data.progredior)) {progredior();}
    else if (isset(data.enkele))     {enkele();}
    else if (isset(data.factum))     {factum();}
+   else if (isset(data.onlineSync)) {onlineSync();}
    else if (isset(data.proxime))    {proxime();}
 
 
@@ -23,31 +24,46 @@ self.addEventListener('message',function(e){
       post('Database reseted.');
    }
    //=========================================================================//
-   function progredior(){//progress
+   function progredior(){//progress idb upgreade
       $f.callIdb(self);
    }
    //=========================================================================//
-   function enkele(){//single fetch to Idb
-      var iDB = $f.callIdb(self),l,x;
-      console.log("WORKING ENKELE", typeof data.militia);
-      if(data.militia==="imple"){
-         $f.aSync(SITE_SERVICE,{"militia":"imple","mensa":data.mensa,"uProfile":data.uProfile},function(e){
-            if(typeof e.notitia==="undefined" || typeof e.notitia[data.mensa].rows==="undefined"){console.log("could not auto update iDB",e);
-               post("could not auto update iDB on "+data.mensa);return false;}
-            l=e.notitia[data.mensa].rows.length;console.log("DATA added",data.mensa,e);
-            for(x=0;x<l;x++){iDB.iWrite(data.mensa,e.notitia[data.mensa].rows[x],true);}
-            post("Worker Typeahead addition for "+data.mensa);
-         });
-      }
-   }
+   function enkele(){//single fetch to Idb: militia|mensa|eternal[jesua|procus]
+      var iDB = $f.callIdb(self),l,x,a,b,finished,tbl=[];
+
+      if(!data.procus || !data.jesua) {console.log("Closing worker:: No identity");self.close(); return false;}
+      if(!data.mensa){ for(var profile in data.eternalScope) tbl.push(profile); data.mensa = tbl;}
+      deb("WORKING ENKELE", data.jesua, data.procus,data.mensa);
+
+      $f.aSync({params:{"militia":"impleOmnis","mensa":data.mensa,"eternal":{"jesua":{"alpha":data.jesua},"procus":data.procus}},callback:callback});
+      function callback(e){console.dir(e);
+         if(typeof e.notitia==="undefined" ){
+            deb("Closing worker::could not auto update iDB",e);
+            post("Failed to sync iDB on "); self.close(); return false;}
+
+         if(data.mensa instanceof Array===false) data.mensa = [data.mensa];
+         b = data.mensa.length;
+         for(a=0; a<b; a++){
+            var profile = data.mensa[a];
+            if(!e.notitia[profile]) continue;
+            l=e.notitia[profile].rows.length;
+            deb("Worker sync "+profile+' processing '+(a+1)+' of '+b );
+            for(x=0;x<l;x++){
+               finished=((a+1)===b && (x+1)===l);
+               iDB.iWrite(profile,e.notitia[profile].rows[x],true,finished);
+               if(finished&&false)post("Sync Done");}
+         }//for
+         setTimeout(function(){console.log("Closing worker::by timmer"); post('close'); self.close();},1000*60*3);
+      }//callback
+   }//enkele
    //=========================================================================//
    function factum(){//server event to fetch data || socket
       var serverEvent;
       serverEvent=new EventSource("https://demo.xpandit.co.za/aura/home-event");
       serverEvent.addEventListener('init',function(ev){
-         cnt++;if(cnt>=50){console.log("Closing worker"); serverEvent.close();self.close();}
-         var results=JSON.parse(ev.data);console.log("WK + SERVER EVENT INIT-"+cnt);
-         if(!results||"servers" in results===false) {console.log("There was an error in bethel's results");return false;}
+         cnt++;if(cnt>=50){deb("Closing worker"); serverEvent.close();self.close();}
+         var results=JSON.parse(ev.data);deb("WK + SERVER EVENT INIT-"+cnt);
+         if(!results||"servers" in results===false) {deb("There was an error in bethel's results");return false;}
          var back = {"results":results,"scope":{"servers":null,"online":null,"serverLine":null}};
          var scope=results;
          try{ results=null;
@@ -62,21 +78,21 @@ self.addEventListener('message',function(e){
             }else{scope.msgStatus="All servers are operational.";}
             scope.last=scope.online.rows[0].modified;
             back.scope=scope; self.postMessage(back);
-         }catch(e){console.log("There was an error in bethel",e.message);}
+         }catch(e){deb("There was an error in bethel",e.message);}
       });
-      serverEvent.onerror=function(ev){iyona.console.log("Server event error.",ev);}
-      self.onclose=function(){serverEvent.close();console.log("Closing worker && SSE :: OnClose");}
+      serverEvent.onerror=function(ev){deb("Server event error.",ev);}
+      self.onclose=function(){serverEvent.close();deb("Closing worker && SSE :: OnClose");}
 
       if(data.factum==="close"){
          serverEvent.close();
          serverEvent=new EventSource("http://demo.xpandit.co.za/aura/home-event,close");
-         console.log("Living God, Closing worker && SSE");
+         deb("Living God, Closing worker && SSE");
          self.close();
       }
    }
    //=========================================================================//
    function proxime(){
-      console.log("Closing worker && SSE");
+      deb("Closing worker && SSE");
       self.close();//serverEvent.close();
    }
    //=========================================================================//

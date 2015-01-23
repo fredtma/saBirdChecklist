@@ -30,8 +30,9 @@ window.isMobile=false;if(navigator.userAgent.match(/(iPhone|iPod|iPad|Android|Bl
 function configuration(){}
 configuration.prototype.config=function(){
    var isChrome=(typeof chrome !== "undefined" && typeof chrome.app.window!=="undefined");
-   var i = (isChrome)?'':(true)?'i/':'';
+   var i = (isChrome||window.isMobile)?'':(true)?'i/':'';
    var conf;
+   i='i/';
 
    sessionStorage.startTime   = new Date().getTime();
    sessionStorage.runTime     = new Date().getTime();
@@ -51,7 +52,7 @@ configuration.prototype.config=function(){
    sessionStorage.SITE_UPLOADS= sessionStorage.SITE_URL+'uploads/';
    sessionStorage.MAIL_SUPPORT= 'support@xpandit.co.za';
    sessionStorage.DB_NAME     = 'app_birdChecklist';
-   sessionStorage.DB_VERSION  = 31;//always use integer bcos of iDB
+   sessionStorage.DB_VERSION  = 36;//always use integer bcos of iDB
    sessionStorage.DB_DESC     = 'The local application Database';
    sessionStorage.DB_SIZE     = 15;
    sessionStorage.DB_LIMIT    = 20;
@@ -121,8 +122,13 @@ iyona={
       }
    },
    info: function(){
-      arguments[arguments.length++]=this.stack();
-      console.info('%c'+arguments[0],'background:#0099ff;color:#efefef;width:100%;display:block;font-weight:bold;',arguments);
+      var a=arguments,l = a.length++;
+      a[l]=this.stack();
+      var color='background:#0099ff;color:#efefef;width:100%;display:block;font-weight:bold;';
+      if(a[1]==='black') color = 'background:#000000;color:#efefef;width:100%;display:block;font-weight:bold;';
+      console.info('%c'+a[0]+" "+a[l],color);
+      if(a[1]!=='black' && a.length>2)console.dir(a[1]);
+
    },
    err: function(){
       arguments[arguments.length++]=this.stack();
@@ -142,7 +148,8 @@ iyona={
       if(!angular)_$("#notification").html(msg).removeClass().addClass(clss);
    },
    on:  function(){
-      if(this.view && window.isMobile===false){
+      if(this.view===false) return;
+      if(window.isMobile===false || true){
          arguments[arguments.length++]=this.stack();
          arguments[arguments.length++]=new Date().getTime();
          this.cons.apply(console,arguments);
@@ -326,8 +333,10 @@ function alphaNumeric(the_str,transform)
  */
 function readWorker(notitiaWorker,callback){
    notitiaWorker.addEventListener('message',function(e){
+      //console.log("wWw",e);
       if(e.data==="licentia")licentia();
       else if(e.data==="reset progress"){profectus("starting db reset",true,10);}
+//      else if(e.data==="close"){notitiaWorker.terminate();iyona.info("Terminating Worker");}
       else if(e.data.progress===true){profectus(e.data.resetTable);}
       else if(callback)callback(e.data,notitiaWorker);
    },false);
@@ -359,6 +368,7 @@ function callWorker(option,callback){
          "SITE_SERVICE":sessionStorage.SITE_SERVICE,
          "SITE_MILITIA":sessionStorage.SITE_MILITIA
       },option);//ce si vas limiter l'access a ceux qui sont enregistrer seulment.
+
    if(window.Worker&&impetroUser()){
       var notitiaWorker=new Worker("minister/worker.notitia.js");
       notitiaWorker.postMessage(opt);
@@ -399,6 +409,9 @@ function setQuaerere(mensa,res,tau,consuetudinem) {
 //=============================================================================//
 function checkConnection() {
    var networkState;
+   if(sessionStorage.SITE_ONLINE==="false" || sessionStorage.SITE_ONLINE===false) return false;//the apps.js should display msg from listening to offline
+   else if(sessionStorage.SITE_ONLINE==="true" || sessionStorage.SITE_ONLINE===true) return true;//the apps.js should display msg from listening to offline
+
    if(typeof navigator.connection!=="undefined")networkState = navigator.connection.type;
    else if(typeof navigator.network!=="undefined")networkState = navigator.network.connection.type;
    else if(isset(sessionStorage.SITE_ONLINE)) networkState = sessionStorage.SITE_ONLINE;
@@ -411,9 +424,11 @@ function checkConnection() {
    states[Connect.CELL_2G] = 'a Cell 2G connection';
    states[Connect.CELL_3G] = 'a Cell 3G connection';
    states[Connect.CELL_4G] = 'a Cell 4G connection';
+   states[Connect.CELL]     = 'Cell generic connection';
    states[Connect.NONE] = 'with No network connection';
    var tmp = states[networkState]||networkState;
-   iyona.info('Connection type is ' + tmp,networkState);
+   iyona.info('Connection type is ' + tmp);
+   sessionStorage.SITE_ONLINE=!tmp||tmp==='none'?false:true;
    return !tmp||tmp==='none'?false:tmp;
 
 }
@@ -581,6 +596,8 @@ function uRand(len,num,date,bin) {
     return text;
 }
 //============================================================================//
+function jesuaNew(n){var t = new Date().getTime(),r=Math.floor((Math.random()*9999)+10),n=n||'Jesus Chirst is Lord'; return md5((t-r)+n); }
+//============================================================================//
 function eternalCall(node,display){
    var eternal    = dynamis.get("eternal",true);
    if(!eternal) return false;
@@ -600,6 +617,8 @@ function eternalCall(node,display){
 function objMerger(first, second) {
     for (var key in second) { if(isset(second[key]) )first[key]=second[key];}
 }
+//============================================================================//
+function exit(msg) {msg = msg||"Something went badly wrong!";if (window.stop)window.stop(); throw new Error(msg);}
 //============================================================================//
 /**
  * similar to PHP issset function, it will test if a variable is empty
@@ -642,6 +661,27 @@ function alphaMerge(map,val,$scope){
       else $scope.father[key]=val[key];
    }
    return $scope;
+}
+//============================================================================//
+function testIdb(doc) {
+   var req = indexedDB.open(sessionStorage.DB_NAME);
+   console.log(req);
+   req.onerror    = function(e){console.log("db err",e.target.error.message);};
+   req.onblocked  = function(e){console.log("blocked app",e);}
+   req.onsuccess  = function(e){
+      var idb=req.result||e.target.result;
+      doc=store||'ales';
+      console.log(idb.objectStoreNames.contains(doc),'contain '+doc);
+      var trans = idb.transaction(doc,'readonly');
+      var store =trans.objectStore(doc);
+   //   console.log(trans,store,store.indexNames, typeof store.indexNames);
+   //   console.log(store.indexNames[0].search(/name/gi));
+      for (var x in store.indexNames){var node=store.indexNames[x]; var r=RegExp('ndx'+'album'+'name','gi'); console.log(node.search(r),node)}
+      var request = store.index('ndxAlbumName').openCursor(null,'prev');
+      var result = [];
+
+      request.onsuccess=function(e){var cursor=e.target.result; if(!cursor){console.log(result)}else{result.push(cursor.value); cursor.continue();} }
+   }
 }
 
 //============================================================================////============================================================================//
