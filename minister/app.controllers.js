@@ -35,39 +35,40 @@ function listCtrl($scope, crud, online) {
          if(!data.links_['linkBird']) data.links_['linkBird'] = {rows:[]};
          addLink();
 
-         if(checkConnection()){//wen connected add local after online
-            scope.module.linkOnline(isNull,fields,mensa,child,childKey,data)
-               .then(function(answer){$scope.father = data; iyona.info("Link complete online and locally");})
-               .catch(function(){iyona.msg("Failed to link, an error occured on the server.");});
-         }else{
-            $scope.father = data;
-            online.$idb.then(function($idb){$idb.write('ales',data,true).then(function(e){ iyona.info("Link complete locally only",e); }); });
-         }
+         scope.module.linkOnline(isNull,fields,mensa,child,childKey,data)
+         .then(function(){$scope.father = data; iyona.info("Link complete ");})
+         .catch(function(){iyona.msg("Failed to link, an error occured on the server.");});
 
          function addLink(){
             var tmp;
             if(isNull){//create the new link||gerund in father's
                var newRow={from_list:$scope.father.name, bird:child.name, list:$scope.father.jesua, description:"", location:"", created: new Date().format('isoDateTime'), modified: new Date().format('isoDateTime')};
                if(!isset(data.links_['linkBird'].rows))data.links_['linkBird'].rows = [];//make link an array wen empty
-               tmp = objSearch(data.links_['linkBird'].rows,$scope.father.jesua); //check if it does not already exist, so that it is not added
-               if(tmp===false) data.links_['linkBird'].rows.push(newRow);
+
+               tmp = objSearch(data.links_['linkBird'].rows,child.name,'bird'); //check if it does not already exist, so that it is not added
+                iyona.off("ALPHA",tmp,child,$scope.father.jesua,data.links_['linkBird'].rows);
+               if(tmp===false){ data.links_['linkBird'].rows.push(newRow); iyona.off("Added row");}
             }else{
-               tmp = objSearch(data.links_['linkBird'].rows,$scope.father.jesua); iyona.off("DELETE",tmp,child.jesua,child,data.links_['linkBird'].rows);
-               if(tmp)data.links_['linkBird'].rows.splice(tmp[1],1);//remove the linkBird
+               tmp = objSearch(data.links_['linkBird'].rows,child.name,'bird');
+               iyona.off("DELETE",tmp,child,$scope.father.jesua,data.links_['linkBird'].rows);
+
+               if(tmp){data.links_['linkBird'].rows.splice(tmp[1],1); iyona.off("Removed",data.links_['linkBird'].rows);}
                else child[childKey] = $scope.father.jesua;//if not found return the value
             }
          }
       };//linkOnlineCtrl
    }
    function newForm(data,notitia){}
-   function readyForm(data,notitia){iyona.info("Form Ready");
-      if($scope.father.links_ && !$scope.father.links_.ales)online.$idb.then(function($idb){$idb.read('ales').then(function(result){ $scope.father.links_.ales={rows:result}; }); });//wen ales empty fetch from document
+   function readyForm(data,notitia){iyona.off("Form Ready");
+      if($scope.father.links_ && !$scope.father.links_.ales)online.$idb.then(function($idb){$idb.read('ales',null).then(function(result){ $scope.father.links_.ales={rows:result}; }); });//wen ales empty fetch from document
       else if(!$scope.father.links_) iyona.info("The links_ property has not been setup.");
    }
 };
 
-listsCtrl.$inject = ['$scope','crud'];
-function listsCtrl($scope, crud) {
+listsCtrl.$inject = ['$scope','crud','online'];
+function listsCtrl($scope, crud, online) {
+   //prevent listing all
+   online.srchOption = {"where":"ndxAlbumUser","is":impetroUser().operarius}
    crud.set($scope,'album','list');
 };
 
@@ -78,7 +79,7 @@ function mainCtrl($scope, online, helper) {
    angular.extend($scope,{"module":{},"service":{"attempt":0},"father":{}});
 
    $scope.logoff        = function(){ helper.logoff($scope);};
-   $scope.onlineSync    = function(){ callWorker({'enkele':true,"sync":true},onlineSync);iyona.msg("The Synchronisation in progress"); };
+   $scope.onlineSync    = onlineSync;
    $scope.module.forgot = callBack;
    $scope.module.login  = login;
    $scope.module.reg    = register;
@@ -111,38 +112,35 @@ function mainCtrl($scope, online, helper) {
          }
       });//fetch callback
    };
-   function onlineSync(data, notitiaWorker){
-      iyona.on(data);
-      if(data==="Sync Done")iyona.msg("The Sytem has finished syncing");
-      //notitiaWorker.terminate();
-   }
    function register(){
       $scope.modal.hide();
+      online.principio('registration');//start and set local db
       helper.goTo('main.profile',{jesua:'new'});
    }
 
 }
 
-profileCtrl.$inject = ['$scope','crud','$state','online'];
-function profileCtrl($scope,crud,$state,online){
-   crud.set($scope,'populus','details');
+profileCtrl.$inject = ['$scope','crud','$state'];
+function profileCtrl($scope,crud,$state){
+   crud.set($scope,'populus','details');//.then(function(scope){
+      $scope.module.alpha=alpha;
+      $scope.module.delta=delta;
+   //});
    //$scope.exp = "((?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,20})";
 
-   $scope.module.alpha=alpha;
-   $scope.module.delta=delta;
+
    $scope.$on("failForm",failForm);
    $scope.$on("newForm",newForm);
    $scope.$on("readyForm",readyForm);
 
    function alpha(callback){profileCheck();callback.call($scope,null,{changeLocation:false});}
    function delta(callback){profileCheck();callback();}
-   function failForm(data,notitia){$scope.father.password="";/* prevent md5 */}
-   function newForm(data,notitia){
+   function failForm(e,notitia){$scope.father.password="";/* prevent md5 */}
+   function newForm(e,notitia){iyona.off("New form",e,notitia,$scope,$scope.$parent);
       if(notitia.transaction==="Alpha") {
          registerUser({"username":$scope.father.email,"aditum":[],"name":$scope.service.name,"jesua":$scope.father.jesua,"procurator":0,"sess":null,"email":$scope.father.email});//will set the USER_NAME & setting.config()
-         online.principio('registration');//start and set local db
          iyona.msg("Hello and welcome "+$scope.service.name,true);
-         $scope.$parent.profile = {"givenname":$scope.service.name,"position":$scope.father.email,"avatar":$scope.father.img||"img/default.jpg","jesua":$scope.father.jesua.alpha};
+         _$("#notification").scope().profile = {"operarius":$scope.father.email,"givenname":$scope.service.name,"position":$scope.father.email,"avatar":$scope.father.img||"img/default.jpg","jesua":$scope.father.jesua};
          $state.go("main.dashboard");
       }
    }

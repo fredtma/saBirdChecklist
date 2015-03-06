@@ -10,52 +10,19 @@ self.addEventListener('message',function(e){
    var $f = new workerMuneris(data);
 
    if(isset(data.novum)) {}
-   else if (isset(data.novaNotitia)){novaNotitia();}
-   else if (isset(data.progredior)) {progredior();}
    else if (isset(data.enkele))     {enkele();}
    else if (isset(data.factum))     {factum();}
-   else if (isset(data.onlineSync)) {onlineSync();}
+   else if (isset(data.novaNotitia)){novaNotitia();}
+   else if (isset(data.progredior)) {progredior();}
    else if (isset(data.proxime))    {proxime();}
 
+   function enkele(){
 
-   //=========================================================================//
-   function novaNotitia(){
-      resetNotitia({users:1,groups:1,ug:1,perm:1,pg:1,pu:1,client:1,contact:1,address:1,dealer:1,salesman:1,ver:1,pages:1,features:1,db:1});
-      post('Database reseted.');
+      switch(data.sync){
+         case 'up'   :syncUp();break;
+         case 'down' :syncDown();break;
+      }
    }
-   //=========================================================================//
-   function progredior(){//progress idb upgreade
-      $f.callIdb(self);
-   }
-   //=========================================================================//
-   function enkele(){//single fetch to Idb: militia|mensa|eternal[jesua|procus]
-      var iDB = $f.callIdb(self),l,x,a,b,finished,tbl=[];
-
-      if(!data.procus || !data.jesua) {console.log("Closing worker:: No identity");self.close(); return false;}
-      if(!data.mensa){ for(var profile in data.eternalScope) tbl.push(profile); data.mensa = tbl;}
-      deb("WORKING ENKELE", data.jesua, data.procus,data.mensa);
-
-      $f.aSync({params:{"militia":"impleOmnis","mensa":data.mensa,"eternal":{"jesua":{"alpha":data.jesua},"procus":data.procus}},callback:callback});
-      function callback(e){console.dir(e);
-         if(typeof e.notitia==="undefined" ){
-            deb("Closing worker::could not auto update iDB",e);
-            post("Failed to sync iDB on "); self.close(); return false;}
-
-         if(data.mensa instanceof Array===false) data.mensa = [data.mensa];
-         b = data.mensa.length;
-         for(a=0; a<b; a++){
-            var profile = data.mensa[a];
-            if(!e.notitia[profile]) continue;
-            l=e.notitia[profile].rows.length;
-            deb("Worker sync "+profile+' processing '+(a+1)+' of '+b );
-            for(x=0;x<l;x++){
-               finished=((a+1)===b && (x+1)===l);
-               iDB.iWrite(profile,e.notitia[profile].rows[x],true,finished);
-               if(finished&&false)post("Sync Done");}
-         }//for
-         setTimeout(function(){console.log("Closing worker::by timmer"); post('close'); self.close();},1000*60*3);
-      }//callback
-   }//enkele
    //=========================================================================//
    function factum(){//server event to fetch data || socket
       var serverEvent;
@@ -91,9 +58,76 @@ self.addEventListener('message',function(e){
       }
    }
    //=========================================================================//
+   function novaNotitia(){
+      resetNotitia({users:1,groups:1,ug:1,perm:1,pg:1,pu:1,client:1,contact:1,address:1,dealer:1,salesman:1,ver:1,pages:1,features:1,db:1});
+      post('Database reseted.');
+   }
+   //=========================================================================//
+   function progredior(){//progress idb upgreade
+      $f.callIdb(self);
+   }
+   //=========================================================================//
    function proxime(){
       deb("Closing worker && SSE");
       self.close();//serverEvent.close();
+   }
+   //=========================================================================//
+   function syncDown(){//single fetch to Idb: militia|mensa|eternal[jesua|procus]
+      var iDB = $f.callIdb(self),l,x,a,b,finished,tbl=[];
+
+      if(!data.procus || !data.jesua) {console.log("Closing worker:: No identity");self.close(); return false;}
+      if(!data.mensa){
+         for(var profile in data.eternalScope) {
+            if(profile!=='caecus')tbl.push(profile);}
+         data.mensa = tbl;}
+      deb("WORKING SYNCDOWN", data.jesua, data.procus,data.mensa);
+
+      $f.aSync({params:{"militia":"impleOmnis","mensa":data.mensa,"eternal":{"jesua":{"alpha":data.jesua},"procus":data.procus}},callback:callback});
+      function callback(e){console.dir(e);
+         if(typeof e.notitia==="undefined" ){
+            deb("Closing worker::could not auto update iDB",e);
+            post("Failed to sync iDB on "); self.close(); return false;}
+
+         if(data.mensa instanceof Array===false) data.mensa = [data.mensa];
+         b = data.mensa.length;
+         for(a=0; a<b; a++){
+            var profile = data.mensa[a];
+            if(!e.notitia[profile] || e.notitia[profile].found===false || !e.notitia[profile].rows) continue;//if no profile, not found or no rows array
+            l=e.notitia[profile].rows.length;
+            deb("Worker sync "+profile+' processing '+(a+1)+' of '+b );
+            for(x=0;x<l;x++){
+               finished=((a+1)===b && (x+1)===l);
+               iDB.iWrite(profile,e.notitia[profile].rows[x],true,finished);
+               if(finished&&true)post("Sync Done");}
+         }//for
+         setTimeout(function(){console.log("Closing worker::by timmer"); post('close'); self.close();},1000*60*3);
+      }//callback
+   }//enkele
+   //=========================================================================//
+   function syncUp(){
+      var iDB = $f.callIdb(self),l,x;
+
+      if(!data.procus || !data.jesua) {console.log("Closing worker:: No identity");self.close(); return false;}
+      deb("WORKING SYNCUP", data.jesua, data.procus);
+
+      iDB.iRead('caecus',{},callback);
+      //READ:: the data from caecus first
+      function callback(result){
+         deb("RESULT",result,result.length);
+         if(result.length>0)$f.aSync({params:{"militia":"syncUp","result":result,"eternal":{"jesua":{"alpha":data.jesua},"procus":data.procus}},callback:resultCall});
+      }
+      //CLEAR:: after online sync clear caecus
+      function resultCall(server){
+         if(server && server.message){
+            post('Sync Error');
+            l=server.message.length;
+            for(x=0;x<l;x++)deb(server.message[x]);
+         }else if(server && server.notitia){
+            post('Sync Done');
+            iDB.iClear('caecus');
+         }
+         deb('server',server);
+      }
    }
    //=========================================================================//
 });//evenlistener for message

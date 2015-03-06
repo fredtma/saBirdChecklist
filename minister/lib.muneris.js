@@ -30,9 +30,8 @@ window.isMobile=false;if(navigator.userAgent.match(/(iPhone|iPod|iPad|Android|Bl
 function configuration(){}
 configuration.prototype.config=function(){
    var isChrome=(typeof chrome !== "undefined" && typeof chrome.app.window!=="undefined");
-   var i = (isChrome||window.isMobile)?'':(true)?'i/':'';
+   var i = (navigator.platform==='Win32')? 'i/': (isChrome||window.isMobile)?'': 'i/';
    var conf;
-   i='i/';
 
    sessionStorage.startTime   = new Date().getTime();
    sessionStorage.runTime     = new Date().getTime();
@@ -52,7 +51,7 @@ configuration.prototype.config=function(){
    sessionStorage.SITE_UPLOADS= sessionStorage.SITE_URL+'uploads/';
    sessionStorage.MAIL_SUPPORT= 'support@xpandit.co.za';
    sessionStorage.DB_NAME     = 'app_birdChecklist';
-   sessionStorage.DB_VERSION  = 36;//always use integer bcos of iDB
+   sessionStorage.DB_VERSION  = 37;//always use integer bcos of iDB
    sessionStorage.DB_DESC     = 'The local application Database';
    sessionStorage.DB_SIZE     = 15;
    sessionStorage.DB_LIMIT    = 20;
@@ -69,15 +68,17 @@ configuration.prototype.config=function(){
       "projectID":      "17238315752",
       "chromeApp":      (typeof chrome !== "undefined" && typeof chrome.app.window!=="undefined")
    };
-   conf.Worker = (1)? conf.Worker: false;//disable worker
+   conf.Worker    = (1)? conf.Worker: false;//disable worker
+   sessionStorage.SITE_ONLINE  = (1)? sessionStorage.SITE_ONLINE: false;
+
    sessionStorage.SITE_CONFIG   = JSON.stringify(conf);
    iyona.sync({"url":sessionStorage.SITE_CAECUS,"method":"get","format":"json","callback":function(data){iyona.off("eternalScope::",data);
       dynamis.set("eternal",data,true);
    }});
    dynamis.set("EXEMPLAR",{
       "username":["^[A-Za-z0-9_]{6,15}$","requires at least six alpha-numerique character"],
-      "pass1":["((?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,20})","requires complex phrase with upperCase, lowerCase, number and a minimum of 6 chars"],
-      "pass2":["^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?!.*\s).*$","requires complex phrase with upperCase, lowerCase, number and a minimum of 6 chars"],
+      "pass1":["((?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,20})","requires upperCase, lowerCase, number and a minimum of 6 chars"],
+      "pass2":["^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?!.*\s).*$","requires upperCase, lowerCase, number and a minimum of 6 chars"],
       "password":["(?=^.{6,}$)((?=.*[0-9])|(?=.*[^A-Za-z0-9]+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$","requires upperCase, lowerCase, number and a minimum of 6 chars"],
       "pass3":["^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,}$","requires upperCase, lowerCase, number and a minimum of 6 chars"],
       "fullDate":["(?:19|20)[0-9]{2}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))","follow the following date format (YYYY-MM-DD)"],
@@ -132,7 +133,8 @@ iyona={
    },
    err: function(){
       arguments[arguments.length++]=this.stack();
-      console.warn('%c'+arguments[0],'background:#ff0000;color:#ececec;width:100%;display:block;font-weight:bold;',arguments);
+      console.warn('%c'+arguments[0]+' '+arguments[arguments.length-1],'background:#ff0000;color:#ececec;width:100%;display:block;font-weight:bold;');
+      if(arguments[2])console.dir(arguments[1]);
    },
    msg:  function(msg,permanent,clss,angular){ angular = angular||true;
       if(!msg) return;
@@ -369,11 +371,11 @@ function callWorker(option,callback){
          "SITE_MILITIA":sessionStorage.SITE_MILITIA
       },option);//ce si vas limiter l'access a ceux qui sont enregistrer seulment.
 
-   if(window.Worker&&impetroUser()){
+   if(window.Worker&&(impetroUser()||true) ){
       var notitiaWorker=new Worker("minister/worker.notitia.js");
       notitiaWorker.postMessage(opt);
       readWorker(notitiaWorker,callback);
-   }
+   } else iyona.info("you are not log in.");
 }
 //============================================================================//
 function registerUser(row){
@@ -414,7 +416,6 @@ function checkConnection() {
 
    if(typeof navigator.connection!=="undefined")networkState = navigator.connection.type;
    else if(typeof navigator.network!=="undefined")networkState = navigator.network.connection.type;
-   else if(isset(sessionStorage.SITE_ONLINE)) networkState = sessionStorage.SITE_ONLINE;
    else networkState = navigator.onLine;
 
    var states = {}; var Connect=typeof Connection!=="undefined"?Connection:{};
@@ -426,12 +427,36 @@ function checkConnection() {
    states[Connect.CELL_4G] = 'a Cell 4G connection';
    states[Connect.CELL]     = 'Cell generic connection';
    states[Connect.NONE] = 'with No network connection';
+
    var tmp = states[networkState]||networkState;
    iyona.info('Connection type is ' + tmp);
-   sessionStorage.SITE_ONLINE=!tmp||tmp==='none'?false:true;
-   return !tmp||tmp==='none'?false:tmp;
+   tmp = !tmp||tmp==='none'?false:tmp;
+
+   var config = dynamis.get("SITE_CONFIG");
+   sessionStorage.SITE_ONLINE = config.isOnline = tmp?true:false;
+   dynamis.set("SITE_CONFIG",config);
+   return tmp;
 
 }
+//============================================================================//
+/**
+ * used to display message when system sync
+ * @param {string} data, the result of the worker
+ * @param {object} notitiaWorker, the worker's object
+ */
+function onlineSync(direction){
+   if(sessionStorage.SITE_ONLINE==='true') {
+      callWorker({'enkele':true,"sync":direction},callback);
+      iyona.msg("The Synchronisation in progress...");}
+   else{iyona.msg("You are currently offline");}
+
+   function callback(data, notitiaWorker){
+      if(data==="Sync Done")iyona.msg("The Sytem has finished syncing");
+      else if(data==="Sync Error")iyona.msg("An error occured while syncing, try again later");
+      //notitiaWorker.terminate();
+   }
+};
+
 //============================================================================//
 /**
  * use prototype to add a function that searches an object value
@@ -441,23 +466,28 @@ function checkConnection() {
  * @param array </var>value</var> the value to search in the object
  * @return bool
  */
-function objSearch(ele,value){
+function objSearch(ele,value,field){
    var key,l,found=false,obj;
    if(ele instanceof Array){
       l=ele.length;
       for(key=0;key<l;key++){obj=ele[key];
-         if(typeof obj==='object' )found=objSearch(obj,value);
+         if(typeof obj==='object' )found=objSearch(obj,value,field);
          if(found!==false) return [found,key];
          if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,key];
       }
    }
-    for(key in ele ) {obj=ele[key];
-        if(typeof obj==='object' )found=objSearch(obj,value);
-        if(found!==false) return [found,key];
-        if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,key];
-    }
+   if(field){
+      obj=ele[field];
+      if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,field];
+   }
+   for(key in ele ) {obj=ele[key];
+      if(typeof obj==='object' )found=objSearch(obj,value,field);
+      if(found!==false) return [found,key];
+      if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,key];
+   }
     return false;
 }
+
 //============================================================================//
 /**
  * get the size of an object
@@ -602,7 +632,7 @@ function eternalCall(node,display){
    var eternal    = dynamis.get("eternal",true);
    if(!eternal) return false;
    var curNode    = eternal[node];
-   return {"scope":curNode,"mensa":curNode.mensa,"display":curNode[display],"title":curNode[display].title};
+   return {"scope":curNode,"mensa":curNode.mensa,"display":curNode[display],"title":curNode[display].title,"links_":curNode[display].links_,"child_":curNode[display].child_};
 }
 //============================================================================//
 /**
@@ -663,19 +693,20 @@ function alphaMerge(map,val,$scope){
    return $scope;
 }
 //============================================================================//
-function testIdb(doc) {
+function testIdb(store,opt) {
    var req = indexedDB.open(sessionStorage.DB_NAME);
    console.log(req);
    req.onerror    = function(e){console.log("db err",e.target.error.message);};
    req.onblocked  = function(e){console.log("blocked app",e);}
    req.onsuccess  = function(e){
       var idb=req.result||e.target.result;
-      doc=store||'ales';
+      var doc=store||'ales';
+      opt = opt||{};
       console.log(idb.objectStoreNames.contains(doc),'contain '+doc);
       var trans = idb.transaction(doc,'readonly');
       var store =trans.objectStore(doc);
-   //   console.log(trans,store,store.indexNames, typeof store.indexNames);
-   //   console.log(store.indexNames[0].search(/name/gi));
+
+      if(opt.del) store.delete(opt.index);
       for (var x in store.indexNames){var node=store.indexNames[x]; var r=RegExp('ndx'+'album'+'name','gi'); console.log(node.search(r),node)}
       var request = store.index('ndxAlbumName').openCursor(null,'prev');
       var result = [];

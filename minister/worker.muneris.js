@@ -40,7 +40,8 @@ function workerMuneris(data){
       }//xhr.onload=function(e){iyona.on("III",e,this.readyState,this.status,this.response);};
 
       if(typeof settings.params==="object"){
-         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");params=JSON.stringify(settings.params);
+         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+         params=JSON.stringify(settings.params);
       }else{
          params=settings.params;xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       };
@@ -57,7 +58,10 @@ function workerMuneris(data){
       var iRequest=self.indexedDB.open(DB_NAME,parseInt(ver));
       var idb,option=data.option,upgrading=false;
       var that=this;
+      that.iClear = iClear;
+      that.iRead  = iRead;
       that.iWrite = iWrite;
+      that.idb = idb;
 
       iRequest.onsuccess=function(e){
          post("Worker iDB Ready");
@@ -67,7 +71,7 @@ function workerMuneris(data){
          //place the addition of data in seperate loop, in order to prevent `transaction running`
          if(upgrading===true && true){
             for(var profile in eternalScope){
-               if(profile==='creo') continue;
+               if(profile==='caecus') continue;
                tbl.push(profile);}
 
             aSync({params:{"militia":"impleOmnis","mensa":tbl,"licentia":"Creo Ratio","eternal":{"jesua":{"alpha":jesua},"procus":procus}},callback:callback});
@@ -83,12 +87,13 @@ function workerMuneris(data){
                   if(single.found===false || !isset(single.rows)){deb("Not Mensa "+profile,single); continue;}
                   l=single.rows.length;
                   console.log("4 Mensa "+profile);
-//                  iWrite(key,single.rows,false);}
+                  //@todo: for large array make single write
                   for(x=0;x<l;x++){iWrite(profile,single.rows[x],false,((a+1)===b && (x+1)===l));}
                }//endfor
             }//callback
+            setTimeout(function(){console.log("Closing after finish upgrade:: Timer");self.close();post('close');},1000*60*3);
          }//if upgrading
-         setTimeout(function(){console.log("Closing after finish upgrade:: Timer");self.close();post('close');},1000*60*3);
+         else setTimeout(function(){console.log("Closing after init:: Timer");self.close();post('close');},1000*60*3);
          upgrading=false;
       }
       iRequest.onerror=function(e){deb("Closing worker::Database error code: "+e.target.error.message);self.close();}
@@ -130,9 +135,59 @@ function workerMuneris(data){
          }
       }
 
+      function iClear(_store){
+         if(iRequest&&iRequest.readyState!=="done"){iRequest.addEventListener("success",function(){deb("Waiting to clear success."); iClear(_store)},false); return false;}
+         else if(iRequest) {idb=iRequest.result;}
+         var request = idb.transaction(_store,"readwrite").objectStore(_store).clear();
+
+         request.onsuccess=function(e){ console.log("Successfully cleared "+_store);}
+         request.onerror=function(e){ console.log("failed to cleared "+_store);}
+      }
+      function iRead(_store,_index,_callback){
+         if(iRequest&&iRequest.readyState!=="done"){iRequest.addEventListener("success",function(){deb("Waiting for success."); iRead(_store,_index,_callback)},false); return false;}
+         else if(iRequest) {idb=iRequest.result;}
+         else {
+            deb("No iRequest on writting "+_store);
+            return false;
+         }
+         if(idb.objectStoreNames.contains(_store)!==true || !_store){deb("No store iFound");return false;}
+         var store=_store,transaction=idb.transaction(store,"readonly"),request,result=[];
+         var objectStore=transaction.objectStore(store),ndx=null,order,keyRange=null;
+
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);}//GET NDX NAME
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order")){order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';}
+
+         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))       {request=objectStore.get(_index);}//FOR PK
+         else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is")) {request=ndx.get(_index.is);}//FIRST GET INDEX:: where field1=value
+         else{
+            var creation = eternalScope[store].creation,
+                  field= Object.keys(creation)[0],
+                  node = creation[field],
+                  indexOrder = (node.unique)? 'uniq_'+field: node.ndx;
+                  //deb("INDEX",creation,field,node,indexOrder);
+            request=objectStore.index(indexOrder).openCursor(null,'next');
+         }
+
+         request.onsuccess=function(e){
+            var cursor = e.target.result;
+            if(cursor && isset(cursor.value)){
+               result.push(cursor.value);
+               cursor.continue();
+            }else if(cursor){
+               result.push(cursor);
+            }
+         }//e.target.result
+         //request.oncomplete=function(e){iyona.on("Successfully iRead to "+store,using,e);}
+         transaction.oncomplete=function(e){
+            deb("Successfully iRead transaction "+_index+" to "+store);
+            if(_callback)_callback(result);
+         }
+         request.onerror=function(e){deb("Error while writing to "+store+"::"+request.error,e); }
+
+      }
       function iWrite(_store,_data,_update,_close){
          var crud;
-         if(iRequest&&iRequest.readyState!="done"){iRequest.addEventListener("success",function(){ iWrite(_store,_data,_update)},false); return false;}
+         if(iRequest&&iRequest.readyState!=="done"){iRequest.addEventListener("success",function(){deb("Waiting to write success."); iWrite(_store,_data,_update)},false); return false;}
          else if(iRequest) {idb=iRequest.result;}
          else {
             deb("No iRequest on writting "+_store);
@@ -192,8 +247,8 @@ function deb(){
       variable=arguments[x];
       if (typeof variable==="function") variable=encodeURI(variable.toString());
       else if (typeof variable==="undefined"||variable===null){ variable="<null>";}
-      else if (variable instanceof Array) {tmp='[';for (var a=0; a<variable.length; a++) tmp+=variable[a]+", "; variable=tmp.slice(0,-2)+']';}
-      else if (typeof variable==="object"){tmp='{';for (var index in variable) tmp+=index+': '+variable[index]+", "; variable=tmp.slice(0,-2)+'}';}
+      else if (variable instanceof Array) {tmp='[';for (var a=0; a<variable.length; a++) tmp+=variable[a]+", "; variable=(tmp.lenght>2)?tmp.slice(0,-2)+']':'[]';}
+      else if (typeof variable==="object"){tmp='{';for (var ndx in variable)  tmp+=ndx+': '+variable[ndx]+", "; variable=(tmp.lenght>2)?tmp.slice(0,-2)+'}':'{}';}
       console.log("["+x+"]"+JSON.stringify(variable));}console.log("==============================================================="+line);
 }
 function post(){

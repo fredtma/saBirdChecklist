@@ -1,12 +1,9 @@
-<ion-view title="{{service.title}}">
+<ion-view view-title="{{service.title}}">
    <ion-nav-bar class="bar-positive" align-title="left">
       <ion-nav-back-button class="button-clear" style="margin-right:7px"><i class="icon ion-ios-arrow-back"></i></ion-nav-back-button>
 
       <ion-nav-buttons side="left"><button class="button button-icon button-clear ion-navicon" menu-toggle="left"></button></ion-nav-buttons>
-      <ion-nav-buttons side="right">
-         <button menu-close class="button button-icon icon ion-loop assertive-bg icon-loop" ng-click="onlineSync()" ></button>
-         <button menu-close class="button button-icon icon ion-log-out assertive-bg icon-shadow" ng-click="logoff()" ></button>
-      </ion-nav-buttons>
+      <ion-nav-buttons side="right"><button menu-close class="button button-icon icon assertive-bg ion-android-upload" ng-click="onlineSync('up')" ></button><button menu-close class="button button-icon icon assertive-bg ion-android-download" ng-click="onlineSync('down')" ></button><button menu-close class="button button-icon icon ion-log-out assertive-bg icon-shadow" ng-click="logoff()" ></button></ion-nav-buttons>
    </ion-nav-bar>
    <ion-tabs class="tabs-sky tabs-icon-left" on-swipe-up="module.action()">
       <ion-tab title="List Details" icon-on="ion-ios-list" icon-off="ion-ios-list-outline">
@@ -28,7 +25,7 @@
                   -->
                   <div class="item item-icon-left item-divider"><i class="icon ion-ios-list-outline"></i>List Details</div>
                   <input type="hidden" ng-model="father.jesua" >
-                  <label class="item item-input item-floating-label"><span class="input-label">Name of List</span><input name="name" type="text" required placeholder="List name" ng-model="father.name" autocomplete="name" /></label>
+                  <label class="item item-input item-floating-label"><span class="input-label">Name of List</span><input autofocus name="name" type="text" required placeholder="List name" ng-model="father.name" autocomplete="name" /></label>
                   <label class="item item-input item-floating-label"><span class="input-label">Description of List</span><textarea name="description" rows="7"  required placeholder="Describe the list" ng-model="father.description" autocomplete="description"></textarea></label>
                </div>
             </form>

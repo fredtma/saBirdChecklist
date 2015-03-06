@@ -8,23 +8,10 @@ angular.module('saBirdChecklist.services',['ngResource'])
 //############################################################################//
 crud.$inject = ["online","helper","$stateParams","$timeout","$state","$q"];
 function crud(online,helper,$stateParams,$timeout,$state,$q){
-   var that=this,$db,$scope,curNode,curMensa,curDisplay,curTitle,nodeName,nodeDisplay,RECORD,params,consuetudinem={},submitFunction={};
+   var that=this,$db,$scope,curNode,curDisplay,curTitle,nodeName,nodeDisplay,RECORD,params,consuetudinem={},submitFunction={};
    that.msg=msg;
    that.set=set;
    that.call=sessionStorage.SITE_AURA;
-   that.submitFunction = {
-      "new":function(){
-         $scope.service.Tau = "Alpha";
-         $scope.service.title = "New "+curTitle;
-         if(typeof $scope.module.alpha==="function")$scope.module.alpha(function(ndx,opt){alpha(ndx,opt);}); else alpha();},
-      "old":function(){
-         $scope.service.Tau = "deLta";
-         $scope.service.title = curTitle;
-         if(typeof $scope.module.delta==="function")$scope.module.delta(function(){delta();}); else delta();},
-      "rem":function(rem,ndx){
-         rem = rem||$stateParams.jesua||$scope.father.jesua||$scope.service.jesua;
-         if(typeof $scope.module.omega==="function")$scope.module.omega(function(){omega(rem,ndx);}); else omega(rem,ndx);}
-   };
 
    function alpha(ndx,opt){iyona.info("Starting to create a new record");
       if(validateForm()===false){$scope.$broadcast("failForm");return false;}
@@ -39,7 +26,7 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
          var notitia = server.notitia;
 
          //give jesua and service.jesua new value
-         iyona.off('stateParams',$stateParams.jesua,ndx,$scope.generations,$scope.father,$state.$current,$state);
+         iyona.off('OVER HERE',opt,server,$stateParams.jesua,ndx,$scope.generations,$scope.father,$state.$current,$state,$scope);
          if($scope.generations && isset(ndx) && notitia.iota ) {$scope.generations[ndx].jesua = notitia.iota; }//wen there is an array of form
          else if(notitia.iota) {//IOTA set and change location
             $scope.father.jesua  = notitia.iota;
@@ -106,26 +93,46 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
       //curMensa    = curNode.mensa;
       curDisplay  = curNode.display;
       curTitle    = curNode.title;
-      $scope.module = isset($scope.module)?$scope.module:{};
-      //setup on $scope the module, service, father, child [optional from json setup]
-      objMerger($scope,{"father":$scope.father||{},"child":curDisplay.child,"service":{"title":curTitle,"patterns":dynamis.get("EXEMPLAR")},"display":{} });
+      $scope.display= {};
+      $scope.module = {};
+      $scope.father = isset($scope.father)?$scope.father:{};
+      $scope.service= {"title":curTitle,"patterns":dynamis.get("EXEMPLAR")};
+      if(curDisplay.links_) $scope.father.links_ = curDisplay.links_;
+      if(curDisplay.child_) $scope.father.child_ = curDisplay.child_;
+
       objMerger(consuetudinem,{"child":curDisplay.child,"uProfile":nodeName,"uDisplay":nodeDisplay});
 
-      helper.set(scope,node,display);//set the module on the $scope.module property
+      helper.set($scope,node,display);//set the module on the $scope.module property
       jesua       = isset($stateParams.jesua)&&$stateParams.jesua!=="new"? $stateParams.jesua||$scope.service.jesua||$scope.father.jesua: $scope.service.jesua||$scope.father.jesua;
       params      = {"view":"form","call":that.call,"mensa":nodeName,"display":nodeDisplay,"jesua":jesua};
       $db         = online.notitia(params);
 
-      $scope.module.delete = this.submitFunction.rem;
+      //SETUP SUMIT
+      that.submitFunction = {
+         "new":function(){
+            $scope.service.Tau = "Alpha";
+            $scope.service.title = "New "+curTitle;
+            if(typeof $scope.module.alpha==="function")$scope.module.alpha(function(ndx,opt){alpha(ndx,opt);}); else alpha();},
+         "old":function(){
+            $scope.service.Tau = "deLta";
+            $scope.service.title = curTitle;
+            if(typeof $scope.module.delta==="function")$scope.module.delta(function(){delta();}); else delta();},
+         "rem":function(rem,ndx){
+            rem = rem||$stateParams.jesua||$scope.father.jesua||$scope.service.jesua;
+            if(typeof $scope.module.omega==="function")$scope.module.omega(function(){omega(rem,ndx);}); else omega(rem,ndx);}
+      };
+
+      $scope.module.delete = that.submitFunction.rem;
       //NEW::new creationg
       if($stateParams.jesua==="new") {
          $stateParams.jesua   = null;
          $scope.service.jesua = null;
-         $scope.module.submit = this.submitFunction.new;
+         $scope.module.submit = that.submitFunction.new;
       }
       //LIST:: listing of all
       else if($stateParams.view==="list" || !isset($stateParams.jesua) ){
-         //$stateParams.jesua = null;
+         //Using view=list mean listing specific users document, hence if no user = display all. this prevents that.
+         if($stateParams.view && !$stateParams.jesua) $stateParams.jesua = impetroUser().operarius||'none';
          $scope.service.Tau = "sigma";
          sigmaList($stateParams.jesua);
       }
@@ -134,13 +141,13 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
          $db = online.notitia({"view":"form","call":that.call,"mensa":nodeName,"display":nodeDisplay,"jesua":$stateParams.jesua,"fields":$stateParams.field});
          $scope.service.jesua = $stateParams.jesua.length!==32?null:$stateParams.jesua;//new vs old
          $scope.service.Tau   = "sigma";
-         $scope.module.submit = $stateParams.jesua.length!==32?this.submitFunction.new:this.submitFunction.old;//new vs old
+         $scope.module.submit = $stateParams.jesua.length!==32?that.submitFunction.new:that.submitFunction.old;//new vs old
          sigmaList();
       }
       //EDIT
       else if($stateParams.jesua!==null && $stateParams.jesua!==""){
          $scope.service.jesua = $stateParams.jesua;
-         $scope.module.submit = this.submitFunction.old;
+         $scope.module.submit = that.submitFunction.old;
          sigma($stateParams.jesua);
       }//end if updating
       deferred.resolve($scope);
@@ -370,11 +377,11 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
     */
    function linkOnline(isNull,fields,run_consue,child,childKey,data){//used to send direct link 2 online server
       var trans =(isNull===true)?'Alpha': (isNull===false)?'omegA':isNull,//get the transaction from isNull
-      result={},toDelete={},cnt,key,RECORD,payload,
+      result={},toDelete={},cnt,key,RECORD,payload,linkedChild,node,isOnline=sessionStorage.SITE_ONLINE==="true"?1:0,
       deferred=$q.defer(),promise=deferred.promise;
 
       payload        = {"view":"link","call":that.call,"mensa":nodeName,"display":nodeDisplay};//payload is deleted
-      that.$db       = that.$db? that.$db: online.notitia(payload,true);//initialise the $resource for online
+      that.$db       = online.notitia(payload,true);//initialise the $resource for online
       //result.eternal = data;
       //result.payload = payload;//no longer needed bcos we are sending via an online $resource
       result.data    = fields;
@@ -382,20 +389,25 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
       RECORD  = new that.$db(result);
 
       if(trans==='Alpha'){
-         online.$idb.then(function($idb){
-            $idb.write(payload.mensa,data,true,{'links_':run_consue,'tau':'Alpha'}).then(function(){
-               RECORD.$save(saveCall);//create an online $resource then delete
-            });
+         online.$idb.then(function($idb){//options:links_ (finds the node),tau (the transaction), vita (the combined key)
+            node = data.links_[run_consue]['rows'];
+            linkedChild = node[node.length-1];//get the last value of the link, which is the new one
+            $idb.write(payload.mensa,data,true,{'links_':run_consue,'tau':'Alpha','linkedChild':linkedChild,'vita':child.name+'-'+$scope.father.jesua}).then(function(){
+               if(isOnline)RECORD.$save(saveCall);//create an online $resource then delete
+               else deferred.resolve('Alpha');
+            }).catch(function(){deferred.reject('FAILED');});
          });//RECORD.$militia(saveCall)
       }
       else if(trans==='omegA'){
          //write update localy 1st then delete online with online $rescouce
          for(key in fields){cnt++; toDelete[key]=fields[key]; if(cnt>=2) break;}//delete function will only take the first two fields
          toDelete['run_consue']=run_consue;iyona.off("toDelete",toDelete,payload);
-         online.$idb.then(function($idb){
-            $idb.write(payload.mensa,data,true,{'links_':run_consue,'tau':'omega','omega':toDelete}).then(function(){
-               RECORD.$delete(toDelete,deleCall);//create an online $resource then delete
-            });
+         online.$idb.then(function($idb){//@note: omega will be stored offline
+            linkedChild = {}; angular.copy(toDelete,linkedChild); linkedChild.modified=new Date().format('isoDateTime');
+            $idb.write(payload.mensa,data,true,{'links_':run_consue,'tau':'omegA','linkedChild':linkedChild,'vita':child.name+'-'+$scope.father.jesua}).then(function(){
+               if(isOnline)RECORD.$delete(toDelete,deleCall);//create an online $resource then delete
+               else deferred.resolve('omegA');
+            }).catch(function(){deferred.reject('FAILED');});;
          });//RECORD.$delete(toDelete,deleCall);//old way
       }
       function saveCall(server){
@@ -416,8 +428,8 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
     * @param {array} required, list of array to check for required fields
     * @returns {Boolean|$q@call;defer.promise}
     */
-   function linkUpline(child,mensa,required){//used to send direct link 2 online server for delta
-      var keyName,payload,result={},
+   function linkUpline(child,run_consue,required){//used to send direct link 2 online server for delta
+      var keyName,payload,result={},RECORD,isOnline=sessionStorage.SITE_ONLINE==="true"?1:0,
       deferred=$q.defer(),promise=deferred.promise;
 
       //used to check & validate delta
@@ -431,18 +443,24 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
       }}
 
       payload        = {"view":"link","call":that.call,"mensa":nodeName,"display":nodeDisplay};
-      that.$db       = that.$db? that.$db: online.notitia(payload);
-      result.eternal = $scope.father;
+      that.$db       = online.notitia(payload,true);
+//      result.eternal = $scope.father;
+//      result.payload = payload;
+      child.modified = new Date().format('isoDateTime');
       result.data    = child;
-      result.payload = payload;
-      result.messenger= {'run_consue':mensa};
-      var RECORD  = new that.$db(result);
+      result.messenger= {'run_consue':run_consue};
+      RECORD  = new that.$db(result);
 
-      RECORD.$militia(function(server){
+      online.$idb.then(function($idb){//options:links_ (finds the node),tau (the transaction), vita (the combined key)
+         $idb.write(payload.mensa,$scope.father,true,{'links_':run_consue,'tau':'deLta','linkedChild':child,'vita':child.bird+'-'+$scope.father.jesua}).then(function(){
+            if(isOnline)RECORD.$militia(modCall);//create an online $resource then delete
+         });
+      });//RECORD.$militia(saveCall)
+      function modCall(server){
          iyona.on("SERVER",server);
          if(isset(server)&&isset(server.links_)){deferred.resolve('deLta');child.aChanged=null;}//remove aChanged in order not to have continous delta
          else{deferred.reject('FAILED');}
-      });
+      };
 
       return promise;
    }
@@ -516,6 +534,7 @@ function online($resource,$http,$q) {
    var IDBKeyRange= window.IDBKeyRange||window.webkitIDBKeyRange||window.msIDBKeyRange;
    this.responseType=this.responseType||"json";//async calls
    that.isConnected;
+   that.srchOption=null;
 
    that.offlineStorage  = offlineStorage;
    that.post            = post;
@@ -552,13 +571,14 @@ function online($resource,$http,$q) {
 
          that.$idb.then(function($idb){//read after idb is read
             if(typeof jesua ==="object") jesua = jesua.jesua||jesua;//if object get jesua otherwise jesua is from the func argument
-            else if (typeof jesua ==="function"){callback=jesua; jesua=null;}
+            else if (typeof jesua ==="function"){callback=jesua; jesua=that.srchOption;}
 
             $idb.read(params.mensa,jesua).then(function(result){
                var server={"notitia":{"iota":result,"msg":"Displaying local result"}};
                callback(server,result);
+               that.srchOption = null; //reset search so that it does not affect other states
                iyona.off("FROM IDB DOCUMENT",server);
-            });
+            }).catch(function(msg,data,e){iyona.msg("There was an error displaying the data",[msg,data,e]);});
          });
          return inner;
       }
@@ -572,8 +592,12 @@ function online($resource,$http,$q) {
                if(dataLoad.eternal.links_)dataLoad.eternal.links_={};//reduce load
                RECORD = new service(dataLoad);
                if (that.isConnected) RECORD.$militia(callback);
+               else{
+                  var server = {"notitia":{"iota":params.eternal.jesua,"transaction":"deLta","msg":"Successfully updated"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  callback(server);
+               }
             });
-         });
+         }).catch(function(arr){iyona.msg("There was an error capturing the data",[msg,data,e]);iyona.on(arr)});
          return inner;
       }
       function query(){}
@@ -582,9 +606,13 @@ function online($resource,$http,$q) {
          that.$idb.then(function($idb){
             if(typeof jesua ==="object") jesua = jesua.jesua||jesua;//if object get jesua otherwise jesua is from the func argument
             $idb.rem(params.mensa,jesua).then(function(e){
-               service.delete({"jesua":jesua},callback);//@jesua can be either obj or {jesua:jesua}
+               if (that.isConnected)service.delete({"jesua":jesua},callback);//@jesua can be either obj or {jesua:jesua}
+               else {
+                  var server = {"notitia":{"iota":jesua,"transaction":"omegA","msg":"Successfully deleted"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  callback(server);
+               }
             });
-         });
+         }).catch(function(arr){iyona.msg("There was an error removing the data",[msg,data,e]);iyona.on(arr)});
       }
       function save(callback){
 
@@ -596,8 +624,12 @@ function online($resource,$http,$q) {
                var dataLoad={};angular.copy(params,dataLoad);//copy to dataLoad, bcos idb needs the full spec of eternal but the server does not
                if(dataLoad.eternal.links_)dataLoad.eternal.links_={};//reduce load
                RECORD = new service(dataLoad);
-               if (connected) RECORD.$save(callback);
-            });
+               if (that.isConnected) RECORD.$save(callback);
+               else{
+                  var server = {"notitia":{"iota":jesua,"transaction":"Alpha","msg":"Successfully saved data"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  callback(server);
+               }
+            }).catch(function(arr){iyona.msg("There was an error capturing the data");iyona.on(arr)});
          });
          return inner;
       }
@@ -613,25 +645,27 @@ function online($resource,$http,$q) {
     * @returns {undefined}
     */
    function offlineStorage(basilia,store,tau,options){
-      var quaerere={};
-      if(store==='caecus') return false;//prevent infinite loop of write.
-      quaerere.created  = new Date().format('isoDateTime');
-      quaerere.document = basilia.rows||basilia;
-      quaerere.jesua    = tau+'-'+basilia.jesua;
-      quaerere.store    = store;
-      quaerere.trans    = tau;
-      quaerere.vita     = basilia.jesua||basilia.vita;
+      if(store==='caecus' || that.isConnected===true) return false;//prevent infinite loop of write.
+      var tmp=basilia.rows||basilia,
+      quaerere={
+         "created":new Date().format('isoDateTime'),
+         "document": {},
+         "jesua":tau+'-'+basilia.jesua,
+         "store":store,
+         "trans":tau,
+         "vita":basilia.jesua||basilia.vita};
+      for(var key in tmp) quaerere.document[key]=tmp[key];//copy document
       if((options && options.links_ && basilia.links_[options.links_])){
-         quaerere.document = options.omega||basilia.links_[options.links_];//on if delete
-         quaerere.jesua    = options.tau+'-'+basilia.jesua;
+         quaerere.document = options.linkedChild||basilia.links_[options.links_];
+         quaerere.jesua    = (options.vita)? options.tau+'-'+options.vita: options.tau+'-'+basilia.jesua;
          quaerere.store    = options.links_;
          quaerere.trans    = options.tau;
       }
-      that.isConnected=false;
+
+      if(quaerere.document.links_)quaerere.document.links_={};//remove links in order to save space
       that.$idb.then(function($idb){iyona.off("CHECK",quaerere,basilia,options); $idb.write('caecus',quaerere,true); });
 
-      if(that.isConnected===false) iyona.info("Storing offline "+tau+" data ",quaerere);//when writing offline
-      else iyona.info("Online error sync offine storage",quaerere);;
+      iyona.off("CONNECTION CHECKing",that.isConnected);
 
    }
    function post(url,params,callback){
@@ -667,7 +701,7 @@ function online($resource,$http,$q) {
 
       if(dynamis.get('SITE_CONFIG').deleteWorker || false)indexedDB.deleteDatabase(sessionStorage.DB_NAME);
       else{
-         callWorker({"progredior":true,"option":true},function(data){//{3}. Check for upgrade
+         callWorker({"progredior":true,"option":true,"from":from},function(data){//{3}. Check for upgrade
             if(data==="Upgradding") {}
             else if(data==="Worker iDB Ready"){
                $idb.IDBReady  = true;
@@ -690,7 +724,7 @@ function online($resource,$http,$q) {
          $idb.idb=$idb.iRequest.result;
          if($idb.idb.objectStoreNames.contains(_store)!==true){iyona.err("iErase No store iFound: "+_store);deferred.reject(_store);}
 
-         var store=_store||"users",transaction=this.idb.transaction(store,"readwrite");
+         var store=_store,transaction=this.idb.transaction(store,"readwrite");
          var objectStore=transaction.objectStore(store);
          var request=objectStore.delete(_index);
          request.onsuccess=function(e){
@@ -698,7 +732,7 @@ function online($resource,$http,$q) {
             that.offlineStorage({"jesua":_index},_store,'omega');
             if(_callback)_callback(e);
             deferred.resolve(e);};
-         request.onerror=function(e){iyona.err("failed to deleted record.",e);deferred.reject(request.error,store,e);};
+         request.onerror=function(e){iyona.err("failed to deleted record.",e);deferred.reject([request.error,store,e]);};
          return promise;
       }
       //=========================================================================//
@@ -716,31 +750,32 @@ function online($resource,$http,$q) {
          if($idb.idb.objectStoreNames.contains(_store)!==true){iyona.err("iRead No store iFound: "+_store);deferred.reject(_store);}
 
          var store=_store,transaction=$idb.idb.transaction(store,"readonly"),request;
-         var objectStore=transaction.objectStore(store),ndx=null,order,keyRange=null;
+         var objectStore=transaction.objectStore(store),ndx=null,order='next',keyRange=null;
 
-         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);using.where=1;}
-         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order")){order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';using.order=1;}
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);using.where=_index.where;}//GET NDX NAME
+         if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order")){order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';using.order=_index.order;}
 
-         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);using.get=1;//for the pk
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("top"))     {keyRange=IDBKeyRange.lowerBound(_index.top); request=ndx.openCursor(keyRange,order);using.top=1;//limit top
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);using.bot=1//limit bottome
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("between")) {keyRange=IDBKeyRange.bound(_index.between[0],_index.between[1],true,true); request=ndx.openCursor(keyRange,order);using.between=1;//between
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is"))      {request=ndx.get(_index.is);iyona.deb("IS",_index.is);using.is=1;//where field1=value
-         }else if(_index!==null&&angular.isArray(_index))                                    {request=objectStore.openCursor(_index);isCursor=true;using.array=1;//where field1=value1 and field2=value2
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("like"))    {keyRange=IDBKeyRange.bound(_index.like,_index.like+'\uffff'); request=ndx.openCursor(keyRange,'prev');using.like=1;//where like...
-         }else if(ndx){request=ndx.openCursor(keyRange,order); using.ndx=1;
+         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);using.get=1;//FOR PK
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("top"))     {isCursor=true;keyRange=IDBKeyRange.lowerBound(_index.top); request=ndx.openCursor(keyRange,order);using.top=_index.top;//limit top
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {isCursor=true;keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);using.bot=_index.bot//limit bottome
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("between")) {isCursor=true;keyRange=IDBKeyRange.bound(_index.between[0],_index.between[1],true,true); request=ndx.openCursor(keyRange,order);using.between=_index.between;//between
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("equals"))  {request=ndx.get(_index.is);using.is=_index.is;//FIRST GET INDEX:: where field1=value
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is"))      {isCursor=true;request=ndx.openCursor(_index.is,order);using.is=_index.is;//FIRST GET INDEX:: where field1=value
+         }else if(_index!==null&&angular.isArray(_index))                                    {isCursor=true;request=objectStore.openCursor(_index);using.array=_index;//where field1=value1 and field2=value2
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("like"))    {keyRange=IDBKeyRange.bound(_index.like,_index.like+'\uffff'); request=ndx.openCursor(keyRange,'prev');using.like=_index.like;//where like...
+         }else if(ndx){request=ndx.openCursor(keyRange,order); using.ndx=_index;
          }else{
             var creation = dynamis.get('eternal',true)[store].creation,
                   field= Object.keys(creation)[0],
                   node = creation[field],
                   indexOrder = (node.unique)? 'uniq_'+field: node.ndx;
                   iyona.off("INDEX",creation,field,node,indexOrder);
-            request=objectStore.index(indexOrder).openCursor(null,'next');isCursor=true;using.all=1;
+            request=objectStore.index(indexOrder).openCursor(null,order);isCursor=true;using.all=_index;
          }
 
          request.onsuccess=function(e){
             var cursor = e.target.result;
-            iyona.off('CURSOR',isCursor,_index,cursor);
+            iyona.off('CURSOR',isCursor,_index,cursor,e);
             if(cursor && isset(cursor.value)){
                result.push(cursor.value);
                cursor.continue();
@@ -754,7 +789,7 @@ function online($resource,$http,$q) {
             if(_callback)_callback(result,isCursor,_passVar);
             deferred.resolve(result,isCursor,_passVar);
          }
-         request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+request.error,e); deferred.reject(request.error,store,e);}
+         request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+request.error,e); deferred.reject([request.error,store,e]);}
          return promise;
       }
       //=========================================================================//
@@ -784,7 +819,7 @@ function online($resource,$http,$q) {
             that.offlineStorage(_data,_store,crud,_options);
             deferred.resolve(e);};
          //transaction.oncomplete=function(e){iyona.on("Successfully completed write transaction to "+store+"::",e);};
-         request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+e.target.error.message,_data);deferred.reject(e.target.error.message,store,_data,e);};
+         request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+e.target.error.message,_data);deferred.reject([e.target.error.message,store,_data,e]);};
          return promise;
       }
       return def.promise;

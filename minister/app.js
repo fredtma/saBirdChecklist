@@ -5,9 +5,9 @@
    function config($stateProvider, $urlRouterProvider, $httpProvider, $ionicConfigProvider, $compileProvider) {
 
       $httpProvider.defaults.withCredentials = true;//allow cookies
-      $ionicConfigProvider.platform.android.tabs.position("bottom");
       $ionicConfigProvider.tabs.position("bottom");
       $ionicConfigProvider.templates.maxPrefetch(15);
+      //$ionicConfigProvider.views.forwardCache(false);
       $ionicConfigProvider.views.maxCache(10);//@todo: production(10)
       $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|blob|content):|data:image\//);
       $stateProvider
@@ -31,8 +31,17 @@
          if(ionic.Platform.isWebView() && isset(navigator.splashscreen)) navigator.splashscreen.hide();
          //document.addEventListener("resume",function(){ iyona.info("Resuming from background"); });
          //document.addEventListener("pause",function(){ iyona.info("Application is in the background"); });
-         document.addEventListener("online",function(){ iyona.info("Application is in back Online"); sessionStorage.SITE_ONLINE=true; });
-         document.addEventListener("offline",function(){ iyona.info("Application is Offline"); sessionStorage.SITE_ONLINE=false; localStorage.offline= new Date().format('isoDateTime'); iyona.msg("Your are currently working offline",false,true); });
+         document.addEventListener("online",function(){
+            iyona.info("Application is in back Online");
+            sessionStorage.SITE_ONLINE=true;
+            onlineSync.call(this,'up')//@onlineSync in lib.muneris.js
+         });
+         document.addEventListener("offline",function(){
+            iyona.info("Application is Offline");
+            sessionStorage.SITE_ONLINE=false;
+            localStorage.offline= new Date().format('isoDateTime');
+            iyona.msg("Your are currently working offline",false,true);
+         });
       });
    }
 })();
