@@ -1,14 +1,14 @@
 <ion-side-menus enable-menu-with-back-views="false">
-   <ion-side-menu-content edge-drag-threshold="false">
+   <ion-side-menu-content edge-drag-threshold="true">
       <ion-nav-bar class="bar-positive" align-title="left">
          <ion-nav-back-button class="button-clear" style="margin-right:7px"><i class="icon ion-ios-arrow-back"></i> </ion-nav-back-button>
 
          <ion-nav-buttons side="left"><button class="button button-icon button-clear ion-navicon" menu-toggle="left"></button></ion-nav-buttons>
-         <ion-nav-buttons side="right"><button menu-close class="button button-icon icon assertive-bg ion-android-upload" ng-click="onlineSync('up')" ></button><button menu-close class="button button-icon icon assertive-bg ion-android-download" ng-click="onlineSync('down')" ></button><button menu-close class="button button-icon icon ion-log-out assertive-bg icon-shadow" ng-click="logoff()" ></button></ion-nav-buttons>
+         <ion-nav-buttons side="right"><button ng-if="service.row" menu-close class="button button-icon icon assertive-bg ion-android-upload" ng-click="onlineSync('up')" ></button><button ng-if="service.row" menu-close class="button button-icon icon assertive-bg ion-android-download" ng-click="onlineSync('down')" ></button><button menu-close class="button button-icon icon ion-log-out assertive-bg icon-shadow" ng-click="logoff()" ></button></ion-nav-buttons>
          <!--<ion-nav-buttons side="right"><button menu-close class="button button-icon icon ion-loop assertive-bg icon-loop" ng-click="onlineSync()" ></button></ion-nav-buttons>-->
       </ion-nav-bar>
       <header ng-show="msg" class="bar bar-small bar-subheader bar-dark"><h5 id="notification" ng-class="msg.clss"  >{{msg.text}}</h5></header>
-      <ion-nav-view name="mainContent"></ion-nav-view>
+      <ion-nav-view name="mainContent" id="mainContent" class="hide-on-keyboard-open-"></ion-nav-view>
    </ion-side-menu-content>
 
    <ion-side-menu side="left">

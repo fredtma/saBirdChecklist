@@ -14,65 +14,47 @@
                   <div class="item " style="height:150px;padding:0;">
                      <img src="img/bcgr/birdList-1280.jpg" style="width:100%;height:100%" srcset="img/bcgr/birdList-480.jpg 640w, img/bcgr/birdList-640.jpg 1024w, img/bcgr/birdList-1280.jpg 1366w, img/bcgr/birdList-1800.jpg 1800w" />
                   </div>
-                  <!--
-                  <div class="item item-icon-left item-divider" style="height:50px;"><i class="icon ion-ios-photos-outline"></i>List Image</div>
-                  <a class="item item-thumbnail-left">
-                     <img id="profileImg" class="captureImg link" ng-src="{{father.img.alpha||'img/default.jpg'}}" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')" />
-                     <button class="button icon-left ion-upload button-clear button-dark" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')">Upload image</button>
-                     <h2>Avatar</h2><p>Tap image to edit.</p>
-                  </a>
-                  <input id="profileFile" name="profileFile" type="file" accept="image/jpeg" style="display:none" multiple placeholder="Profile Image" onchange="angular.element(this).scope().module.getPicture(event,'img',null,'profile.jpg')" />
-                  -->
-                  <div class="item item-icon-left item-divider"><i class="icon ion-ios-list-outline"></i>List Details</div>
+                  <div class="item item-icon-left item-divider"><i class="icon ion-ios-list-outline"></i>List Details </div>
                   <input type="hidden" ng-model="father.jesua" >
-                  <label class="item item-input item-floating-label"><span class="input-label">Name of List</span><input autofocus name="name" type="text" required placeholder="List name" ng-model="father.name" autocomplete="name" /></label>
+                  <label class="item item-input item-floating-label"><span class="input-label">Name of List</span><input name="name" type="text" required placeholder="List name" ng-model="father.name" autocomplete="name" /></label>
                   <label class="item item-input item-floating-label"><span class="input-label">Description of List</span><textarea name="description" rows="7"  required placeholder="Describe the list" ng-model="father.description" autocomplete="description"></textarea></label>
+
+                  <button class="button icon ion-ios-calendar-outline" ng-click="display.dates=!display.dates" style="background:transparent;border:2px solid transparent" ng-bind="!father.date_from?' Include a date?':' Current date'"></button>
+                  <label ng-if="display.dates" class="item item-input"><span class="input-label">Start Date</span><input autofocus name="date_from" type="date" required placeholder="List starts from" ng-model="father.date_from" /></label>
+                  <label ng-if="display.dates" class="item item-input"><span class="input-label">End Date</span><input autofocus name="date_to" type="date" required placeholder="List end date" ng-model="father.date_to" /></label>
+                  <div class="item" id="map_location" style="width:100%;height:350px"></div>
                </div>
             </form>
          </ion-content>
       </ion-tab>
 
       <ion-tab title="Birds Associated" icon-on="ion-ios-paper" icon-off="ion-ios-paper-outline">
+         <my-search></my-search>
          <ion-content has-header="true" has-bouncing="true" padding="false">
-               <div class="bar bar-header item-input" style="padding-left:auto;">
-                 <label class="item-input-wrapper light-bg" >
-                   <i class="icon ion-ios-search placeholder-icon"></i><input type="search" placeholder="Search" ng-model="search">
-                 </label>
-                 <button class="button button-clear button-dark " ng-click="search=null">Cancel</button>
+            <div ng-repeat="child in father.links_.linkBird.rows|filter:search|limitTo:50" class="card hs-subheader" >
+               <div class="item item-divider" ng-bind="child.bird"></div>
+               <div class="item item-text-wrap">
+                  <label class="item item-input"><span class="input-label">Created:</span><input type="text" readonly style="background:transparent" placeholder="Created on" ng-model="child.created"></label>
+                  <label class="item item-input"><span class="input-label">Coordinates</span><a ng-href="https://maps.googleapis.com/maps/api/staticmap?zoom=14&size=400x300&sensor=false&center={{child.gps}}" target="blank" ng-bind="child.gps"></a>&nbsp;&nbsp;&nbsp;Click to view location</label>
+                  <label class="item item-input">
+                     <span class="input-label">Description:</span>
+                     <input type="text" placeholder="Description" ng-blur="module.linkUpline(child,'linkBird',['description','location'])" ng-change="child.aChanged=true" ng-model="child.description">
+                  </label>
+                  <label class="item item-input">
+                     <span class="input-label">Location:</span>
+                     <input type="text" placeholder="Location" ng-blur="module.linkUpline(child,'linkBird',['description','location'])" ng-change="child.aChanged=true" ng-model="child.location">
+                  </label>
                </div>
-               <div class="item item-icon-left item-divider item-button-right" style="height:40px;vertical-align: top;">
-                  <i class="icon ion-ios-paper-outline"></i>
-                  Selected birds
-               </div>
-
-               <div ng-repeat="child in father.links_.linkBird.rows|filter:search|limitTo:50" class="card" >
-                  <div class="item item-divider" ng-bind="child.bird"></div>
-                  <div class="item item-text-wrap">
-                     <label class="item item-input"><span class="input-label">Created:</span><input type="text" readonly style="background:transparent" placeholder="Created on" ng-model="child.created"></label>
-                     <label class="item item-input">
-                        <span class="input-label">Description:</span>
-                        <input type="text" placeholder="Description" ng-blur="module.linkUpline(child,'linkBird',['description','location'])" ng-change="child.aChanged=true" ng-model="child.description">
-                     </label>
-                     <label class="item item-input">
-                        <span class="input-label">Location:</span>
-                        <input type="text" placeholder="Location" ng-blur="module.linkUpline(child,'linkBird',['description','location'])" ng-change="child.aChanged=true" ng-model="child.location">
-                     </label>
-                  </div>
-               </div>
+            </div>
             <div style="height:100px" ></div>
 
          </ion-content>
       </ion-tab>
 
       <ion-tab title="Bird List" icon-on="ion-ios-eye" icon-off="ion-ios-eye-outline">
-         <ion-content has-header="true" has-bouncing="true" padding="false">
+         <my-search></my-search>
+         <ion-content has-header="true" has-bouncing="true" padding="false" class="has-subheader">
             <div class="list ">
-               <div class="bar bar-header item-input" style="padding-left:auto;">
-                 <label class="item-input-wrapper light-bg" >
-                   <i class="icon ion-ios-search placeholder-icon"></i><input type="search" placeholder="Search" ng-model="search">
-                 </label>
-                 <button class="button button-clear button-dark " ng-click="search=null">Cancel</button>
-               </div>
                <div class="item item-icon-left item-divider item-button-right" style="height:40px;vertical-align: top;">
                   <i class="icon ion-ios-eye-outline"></i>
                   Bird Lists
@@ -81,7 +63,7 @@
                   <input form="dataForm" type="hidden" ng-model="child.jesua" />
                   <span ng-bind="child.name"></span>
                   <!--<button ng-click="module.linkOnlineCtrl(child.list===null,{bird:child.name,list:father.jesua},'ales',child)"-->
-                  <button ng-click="module.linkOnlineCtrl(child.list,{bird:child.name,list:father.jesua},'linkBird',child,'list')"
+                  <button ng-click="module.linkOnlineCtrl(child.list,{bird:child.name,list:father.jesua,gps:father.gps},'linkBird',child,'list')"
                      ng-class="'button button-clear icon-left icon-modified '+{true:'button-balanced ion-checkmark-circled',false:'button-calm ion-plus-circled'}[child.list===father.jesua]" ></button>
                </div>
             </div>

@@ -1,3 +1,4 @@
+'use strict';
 angular.module('saBirdChecklist.services',['ngResource'])
    .service("crud",crud)
    .service("helper",helper)
@@ -14,6 +15,7 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
    that.call=sessionStorage.SITE_AURA;
 
    function alpha(ndx,opt){iyona.info("Starting to create a new record");
+
       if(validateForm()===false){$scope.$broadcast("failForm");return false;}
       if(typeof $scope.father.created==="undefined") $scope.father.created = new Date().toISOString(); else if ($scope.father.created==="none") delete $scope.father.created;
       var basilia = setQuaerere(nodeName,$scope.father,$scope.service.Tau,consuetudinem);
@@ -123,11 +125,13 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
       };
 
       $scope.module.delete = that.submitFunction.rem;
+      iyona.off("$stateParams",$stateParams);
       //NEW::new creationg
       if($stateParams.jesua==="new") {
          $stateParams.jesua   = null;
          $scope.service.jesua = null;
          $scope.module.submit = that.submitFunction.new;
+         $scope.$broadcast("clearForm",true);//event for a new form.
       }
       //LIST:: listing of all
       else if($stateParams.view==="list" || !isset($stateParams.jesua) ){
@@ -145,7 +149,7 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
          sigmaList();
       }
       //EDIT
-      else if($stateParams.jesua!==null && $stateParams.jesua!==""){
+      else if(isset($stateParams.jesua) ){
          $scope.service.jesua = $stateParams.jesua;
          $scope.module.submit = that.submitFunction.old;
          sigma($stateParams.jesua);
@@ -175,14 +179,15 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
       return false;
    }
    function sigma(jesua){ if($db===false) return;
+      var deferred = $q.defer(); $scope.service.promise = deferred.promise;
 
       RECORD = new $db.get({"jesua":jesua},function(server){
          if(online.verify(server)===false) { iyona.err("Failed to verify."); return;}
          var iota = server.notitia.iota[0];
          setConsuetudinem(server.notitia);
          alphaMerge(curDisplay,iota,$scope);
-         iyona.off('sigma',server,typeof server,iota,$scope.father);
-
+         iyona.on('sigma',server,typeof server,iota,$scope.father,curDisplay);
+         deferred.resolve(server);
          $scope.$broadcast("readyForm",server.notitia);iyona.off("Selected record server and father");iyona.msg(server.notitia.msg,false,'balanced');
       });
    }//end function sigma: list one item
@@ -198,6 +203,7 @@ function crud(online,helper,$stateParams,$timeout,$state,$q){
       });
    }//end function sigmaList: list more than one item
    function validateForm(){
+
       if(!isset($scope.formScope)) {iyona.err("Form not Innitialised",$scope); return false;}
       var form = $scope.formScope,dataForm=form.dataForm,msg=null;
       if(dataForm.$dirty===false) msg = " No changes detected on the form";
@@ -227,6 +233,7 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
    that.enumWalk     =enumWalk;
    that.getPicture   =getPicture;
    that.goTo         =goTo;
+   that.gps          =gps;
    that.initForm     =initForm;
    that.linkOnline   =linkOnline;
    that.linkUpline   =linkUpline;
@@ -241,8 +248,8 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
       var title,submitTxt,buttons,custModule;
       title = curNode.display.title;
 
-      if(!$scope.service.jesua){text = text||'Create '; submitTxt = "<i class='icon ion-ios-paper-outline' i></i> "+text+title;}
-      else {text=text||'Update ';submitTxt = "<i class='icon ion-ios-compose-outline' i></i> "+text+title;}
+      if(!$scope.service.jesua){text = text||'Create '; submitTxt = "<i class='icon ion-ios-paper-outline'></i> "+text+title;}
+      else {text=text||'Update ';submitTxt = "<i class='icon ion-ios-compose-outline'></i> "+text+title;}
       //create default submit and add custom action modules, this includes text & module to be called.
       buttons = [{"text":submitTxt,"type":"submit"}];
       if(curNode.display.action instanceof Array){buttons = buttons.concat(curNode.display.action);}//merge submit btn with the rest of custom btn
@@ -250,8 +257,8 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
       var actionSheet = $ionicActionSheet.show({
          "titleText":"Take Action",
          "buttons":buttons,
-         "cancelText":"<i class='icon ion-ios-close-outline' i> Cancel Action",
-         "destructiveText":"<i class='icon ion-ios-trash-outline' i> Delete Article",
+         "cancelText":"<i class='icon ion-ios-close-outline'></i> Cancel Action",
+         "destructiveText":"<i class='icon ion-ios-trash-outline'></i> Delete Article",
          "buttonClicked":function(index){
             iyona.off("button clicked is",index);
             switch(index){
@@ -310,18 +317,27 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
          else $scope.generations[index][opt] = $scope.parent.fields[opt].enum[0];
       }
    }
+   /**
+    * support to take a picture from a browser or native device
+    * @param {type} <var>e</var> the event variable, if browser will contain the field type
+    * @param {type} <var>field</var> the field that will be part of the main data fields (father)
+    * @param {type} <var>ele</var> the ID of the input file element, in a browser it is passed twice
+    * @param {type} <var>filename</var> the name of the file that will appear on the
+    * @param {type} <var>ndx</var> when workin on multiple row, an index is the identifier
+    * @returns {Boolean}
+    */
    function getPicture(e,field,ele,filename,ndx){
       //native browser
       if(typeof navigator.camera === "undefined") {
          var file,reader;
-         $scope.service.tmp = isset(ndx)?ndx:isset($scope.service.tmp)?$scope.service.tmp:null;//this stores the ndx in a tmp. when calling from a desktop the function is called x2, the 2nd time it does not have ndx, heance why it's stored
-         ndx = isset(ndx)?ndx:$scope.service.tmp;
+         $scope.service.ndx = isset(ndx)? ndx: isset($scope.service.ndx)? $scope.service.ndx: null;//this stores the ndx in a tmp. when calling from a desktop the function is called x2, the 2nd time it does not have ndx, heance why it's stored
+         ndx = $scope.service.ndx;
 
          if(!e || (e.target.type!=='file' && !isset(ele)) ) {iyona.msg("Camera option not available.",false,true); return false;}
-         else if(e.target.type!=='file' && isset(ele)){_$(ele)[0].click(); return false;}
-         iyona.err("Camera option not available.",e.target,ele);
+         else if(e.target.type!=='file' && isset(ele)){_$(ele)[0].click(); return false;}//wen in a browser function will run twice. ele will be passed and clicked
+         iyona.info("Loading browsing image...",'blue');
 
-         file = e.target.files[0];//{name,size,type}
+         file = e.target.files[0];//{name,size,type} take the first file
          if(!isset(file)) {iyona.msg("Camera option not available.",false,true); return false;}
          else if(file.type!=='image/jpeg') {iyona.msg("Only Jpeg images are allowed"); return false;}
          else if (file.size >1000000)  {iyona.msg("The selected file is larger than 1MB."); return false;}
@@ -329,34 +345,55 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
 //         reader.readAsBinaryString(file);//for binary
          reader.readAsDataURL(file);
          reader.onload = function(evt){
-
             if(!ndx)_$(".captureImg")[0].src = evt.target.result;
             else _$(".img"+ndx)[0].src = evt.target.result;
 
             $scope.$apply(function(){
                $scope.father[field] = {"alpha":evt.target.result,"icon":filename||file.name,"type":file.type};
-               if(isset(ndx)){$scope.generations[ndx][field] = {"alpha":evt.target.result,"icon":filename||file.name,"type":file.type};
-                  iyona.on('generation',ndx,$scope.generations[ndx]);}
+               if(isset(ndx)){$scope.generations[ndx][field] = {"alpha":evt.target.result,"icon":filename||file.name,"type":file.type};}
             });
-            iyona.off('event',evt,$scope.father[field],'---',file);
+            iyona.on('event',evt,$scope.father[field],'---',file);
          }
          $scope.formScope.dataForm.$dirty = true;
          return false;
       }
+      var option = {"quality":90,"destinationType":Camera.DestinationType.DATA_URL,"correctOrientation":true,"mediaType":Camera.MediaType.PICTURE,"sourceType":Camera.PictureSourceType.CAMERA,"cameraDirection":Camera.Direction.FRONT,"encodingType":Camera.EncodingType.JPEG};
       //mobile camera available
-      navigator.camera.getPicture(
-         function(img){
-            iyona.info("Capturing image",Camera);
-            e.target.src = "data:image/jpeg;base64,"+img;
-            if (img >1200000)  {iyona.msg("The selected file is larger than 1MB."); return false;}
-            $scope.father[field] = {"alpha":img,"icon":filename||"image.jpg","type":"image/jpeg"};
-            if(isset(ndx))$scope.generations[ndx][field] = {"alpha":img,"icon":filename||"image.jpg","type":"image/jpeg"};
-            $scope.formScope.dataForm.$dirty = true;
-         },
-         function(err){$ionicPopup.alert({"title":"Image Capture","template":"Could not capture the image::"+err}).then(function(){iyona.info("The image was no image captured::"+err);}); },
-         {"quality":100,"destinationType":Camera.DestinationType.DATA_URL,"correctOrientation":true,"sourceType":1,"cameraDirection":0});
+      navigator.camera.getPicture(successImg,failImg,option);
+      function successImg (img){
+         iyona.on("Capturing image",'purple',e);
+         img = "data:image/jpeg;base64,"+img;
+         if(typeof e.target.src!=="undefined")e.target.src = img;
+         else{
+            if(!ndx)_$(".captureImg")[0].src = img;
+            else _$(".img"+ndx)[0].src = img;
+         }
+         if (img >1200000)  {iyona.msg("The selected file is larger than 1MB."); return false;}
+         $scope.father[field] = {"alpha":img,"icon":filename||"image.jpg","type":"image/jpeg"};
+         if(isset(ndx))$scope.generations[ndx][field] = {"alpha":img,"icon":filename||"image.jpg","type":"image/jpeg"};
+         $scope.formScope.dataForm.$dirty = true;
+      }
+      function failImg(err){
+         $ionicPopup.alert({"title":"Image Capture","template":"Could not capture the image::"+err}).then(function(){iyona.info("The image was not captured::"+err);});
+      }
    }
    function goTo(label,option){$state.go(label,option);}
+   /**
+    * gets the gps location and returns the object via a promis
+    * @param {object} opt {enableHighAccuracy,maximumAge,timeout}
+    * @returns {$q@call;defer.promise} {latitude, longitude, altitude, accuracy, altitudeAccuracy, heading, spedd, timestamp}
+    */
+   function gps(opt){
+      var deferred=$q.defer(),promise=deferred.promise;
+      opt = opt||{enableHighAccuracy: true,maximumAge:1000*60*10};
+      if(typeof navigator.geolocation!="undefined"){
+         navigator.geolocation.getCurrentPosition(function(position){var pos = position.coords;pos.timestamp=position.timestamp; deferred.resolve(pos);},locationError,opt);//@location: lib.muneris.js
+      } else {
+         iyona.msg("This device does not support GPS location");
+         deferred.reject(false);
+      }
+      return promise;
+   }
    function initForm(form,multiple){
       iyona.off("initForm",form,$scope);
       $scope.formScope = form;
@@ -464,14 +501,13 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
 
       return promise;
    }
-   function loginModal($scope){
-      $ionicModal
-      .fromTemplateUrl('cera/login.html',{"scope":$scope,"animation":"slide-in-up","focusFirstInput":true,"backdropClickToClose":false,"hardwareBackButtonClose":false})
-      .then(function(modal){
+   function loginModal($scope,cb){
+      var option = typeof cb ==="function"? cb: {"scope":$scope,"animation":"slide-in-up","focusFirstInput":true,"backdropClickToClose":false,"hardwareBackButtonClose":false};
+      return $ionicModal.fromTemplateUrl('cera/login.html',option).then(function(modal){
          $scope.modal = modal;
          $scope.modal.show();
+         return modal;
       }).catch(function(err,err2){iyona.on('err::',err,err2); });
-
    }
    function logoff(mainScope){
 
@@ -483,7 +519,7 @@ function helper($ionicPopup,$ionicActionSheet,$state,online,$q,$ionicModal){
             iyona.err("Application is closing.");
             if(!ionic.Platform.isWebView()) {
                dynamis.clear(true);//delete localStorage on webplatform not mobile
-               $state.go("main.dashboard",{},{ location: true, inherit: true, relative: $state.$current, notify: true, reload:true });
+               $state.go("main.dashboard",{},{ location: true, inherit: true, relative: $state.$current, notify: true, reload:true });//location:replace url, inherit: inherit url parameters,reload:do transition, notify: notify $stateChange
                loginModal(mainScope);
             }//webview is for mobile
          }
@@ -570,15 +606,17 @@ function online($resource,$http,$q) {
       function get(jesua,callback){
 
          that.$idb.then(function($idb){//read after idb is read
-            if(typeof jesua ==="object") jesua = jesua.jesua||jesua;//if object get jesua otherwise jesua is from the func argument
+
+            if(typeof jesua ==="object") jesua = jesua.jesua||jesua.alpha;//if object get jesua otherwise jesua is from the func argument
             else if (typeof jesua ==="function"){callback=jesua; jesua=that.srchOption;}
 
-            $idb.read(params.mensa,jesua).then(function(result){
+            $idb.read(params.mensa,jesua,null,innerCall).catch(function(msg,data,e){iyona.msg("There was an error displaying the data",[msg,data,e]);});
+            function innerCall(result){
                var server={"notitia":{"iota":result,"msg":"Displaying local result"}};
                callback(server,result);
                that.srchOption = null; //reset search so that it does not affect other states
                iyona.off("FROM IDB DOCUMENT",server);
-            }).catch(function(msg,data,e){iyona.msg("There was an error displaying the data",[msg,data,e]);});
+            }
          });
          return inner;
       }
@@ -587,7 +625,8 @@ function online($resource,$http,$q) {
          that.$idb.then(function($idb){
             angular.extend(params.eternal,{"modified":new Date().format('isoDateTime')});
 
-            $idb.write(params.mensa||queryLoad.mensa,params.eternal,true).then(function(e){
+            $idb.write(params.mensa||queryLoad.mensa,params.eternal,true,null,innerCall);
+            function innerCall(e){
                var dataLoad={};angular.copy(params,dataLoad);//copy to dataLoad, bcos idb needs the full spec of eternal but the server does not
                if(dataLoad.eternal.links_)dataLoad.eternal.links_={};//reduce load
                RECORD = new service(dataLoad);
@@ -596,7 +635,7 @@ function online($resource,$http,$q) {
                   var server = {"notitia":{"iota":params.eternal.jesua,"transaction":"deLta","msg":"Successfully updated"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
                   callback(server);
                }
-            });
+            }
          }).catch(function(arr){iyona.msg("There was an error capturing the data",[msg,data,e]);iyona.on(arr)});
          return inner;
       }
@@ -605,31 +644,34 @@ function online($resource,$http,$q) {
 
          that.$idb.then(function($idb){
             if(typeof jesua ==="object") jesua = jesua.jesua||jesua;//if object get jesua otherwise jesua is from the func argument
-            $idb.rem(params.mensa,jesua).then(function(e){
+            $idb.rem(params.mensa,jesua,innerCall);
+            function innerCall(e){
                if (that.isConnected)service.delete({"jesua":jesua},callback);//@jesua can be either obj or {jesua:jesua}
                else {
-                  var server = {"notitia":{"iota":jesua,"transaction":"omegA","msg":"Successfully deleted"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  var server = {"notitia":{"iota":jesua,"transaction":"omegA","msg":"Successfully deleted"}};//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
                   callback(server);
-               }
-            });
-         }).catch(function(arr){iyona.msg("There was an error removing the data",[msg,data,e]);iyona.on(arr)});
+               }}
+         }).catch(function(arr){iyona.msg("There was an error removing the data");iyona.on(arr);});
       }
       function save(callback){
 
          that.$idb.then(function($idb){
-            var jesua = jesuaNew(params.mensa);
-            angular.extend(params.eternal,{"created":new Date().format('isoDateTime'),"modified":new Date().format('isoDateTime'),"jesua":jesua,"blossom":jesua });
+            var jesua = jesuaNew(params.mensa),newDate=new Date().format('isoDateTime');
+            angular.extend(params.eternal,{"created":newDate,"modified":newDate,"jesua":jesua,"blossom":jesua });
 
-            $idb.write(params.mensa||queryLoad.mensa,params.eternal,false).then(function(e){
+            $idb.write(params.mensa||queryLoad.mensa,params.eternal,false,null,innerCall).catch(function(arr){iyona.msg("There was an error saving the data");iyona.on(arr);});
+            function innerCall(e){
                var dataLoad={};angular.copy(params,dataLoad);//copy to dataLoad, bcos idb needs the full spec of eternal but the server does not
-               if(dataLoad.eternal.links_)dataLoad.eternal.links_={};//reduce load
-               RECORD = new service(dataLoad);
+               if(dataLoad.eternal.links_)dataLoad.eternal.links_={};//reduce loading sub child
+               RECORD = new service(dataLoad);//now create a $resource for online save
                if (that.isConnected) RECORD.$save(callback);
                else{
-                  var server = {"notitia":{"iota":jesua,"transaction":"Alpha","msg":"Successfully saved data"}}//['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  //message from server
+                  //['notitia'=>["msg"=>$msg,"iota"=>$iota,"trnsc"=>$trnsc,"quaerere"=>$sql,"consuetudinem"=>$custom,"transaction"=>$this->transaction,"idem"=>$this->idem]];
+                  var server = {"notitia":{"iota":jesua,"transaction":"Alpha","msg":"Successfully saved data"}};
                   callback(server);
                }
-            }).catch(function(arr){iyona.msg("There was an error capturing the data");iyona.on(arr)});
+            }
          });
          return inner;
       }
@@ -690,9 +732,9 @@ function online($resource,$http,$q) {
       return promise;
    }
    function principio(from){//kick start the storage system, used upon login or application start
-      that.$idb      = setIndexeddb(from);//{1}run it on 1st time ::[PROMISE]
+      return that.$idb = setIndexeddb(from);//{1}run it on 1st time ::[PROMISE]
    }
-   function setIndexeddb(from){iyona.info("Running "+(dynamis.get("SITE_CONFIG").Worker?"locally":"online")+" on "+checkConnection()+" and initiated from "+from||'unknown','black');
+   function setIndexeddb(from){iyona.info("Running "+(dynamis.get("SITE_CONFIG").Worker?"locally":"online")+" with connection="+checkConnection()+" and initiated from "+from||'unknown','black');
       var $idb       = {}, def = $q.defer();
       $idb.rem       = iErase;
       $idb.read      = iRead;
@@ -706,7 +748,7 @@ function online($resource,$http,$q) {
             else if(data==="Worker iDB Ready"){
                $idb.IDBReady  = true;
                $idb.iRequest  = indexedDB.open(sessionStorage.DB_NAME);
-               $idb.iRequest.onsuccess =function(e){$idb.idb=$idb.iResult||e.target.result||$idb.iRequest.result;def.resolve($idb); iyona.on("Front End iDB Ready");}
+               $idb.iRequest.onsuccess =function(e){$idb.idb=$idb.iResult||e.target.result||$idb.iRequest.result;def.resolve($idb); iyona.info("Front End iDB Ready",'forestgreen');}
                $idb.iRequest.onerror   =function(e){iyona.err("Database error code: "+e.target.error.message, e); def.reject(false,e);}
                $idb.iRequest.onblocked =function(e){iyona.on("Please close all other tabls with that application",true); def.reject(false,e);}
             }
@@ -755,9 +797,9 @@ function online($resource,$http,$q) {
          if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("where")){ndx=objectStore.index(_index.where);using.where=_index.where;}//GET NDX NAME
          if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("order")){order=(_index.order.search(/desc/i)!==-1||_index.order.search(/prev/i)!==-1)? 'prev': 'next';using.order=_index.order;}
 
-         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);using.get=1;//FOR PK
+         if(_index!==null&&(typeof _index==="number"||typeof _index==="string"))             {request=objectStore.get(_index);using.get=_index;//FOR PK
          }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("top"))     {isCursor=true;keyRange=IDBKeyRange.lowerBound(_index.top); request=ndx.openCursor(keyRange,order);using.top=_index.top;//limit top
-         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {isCursor=true;keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);using.bot=_index.bot//limit bottome
+         }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("bot"))     {isCursor=true;keyRange=IDBKeyRange.upperBound(_index.bot); request=ndx.openCursor(keyRange,order);using.bot=_index.bot;//limit bottome
          }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("between")) {isCursor=true;keyRange=IDBKeyRange.bound(_index.between[0],_index.between[1],true,true); request=ndx.openCursor(keyRange,order);using.between=_index.between;//between
          }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("equals"))  {request=ndx.get(_index.is);using.is=_index.is;//FIRST GET INDEX:: where field1=value
          }else if(_index!==null&&typeof _index==="object"&&_index.hasOwnProperty("is"))      {isCursor=true;request=ndx.openCursor(_index.is,order);using.is=_index.is;//FIRST GET INDEX:: where field1=value
@@ -786,7 +828,7 @@ function online($resource,$http,$q) {
          //request.oncomplete=function(e){iyona.on("Successfully iRead to "+store,using,e);}
          transaction.oncomplete=function(e){
             iyona.info("Successfully iRead transaction "+_index+" to "+store,using);
-            if(_callback)_callback(result,isCursor,_passVar);
+            if(typeof _callback ==='function')_callback(result,isCursor,_passVar);
             deferred.resolve(result,isCursor,_passVar);
          }
          request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+request.error,e); deferred.reject([request.error,store,e]);}
@@ -796,7 +838,7 @@ function online($resource,$http,$q) {
       /*
        * @check : worker.muneris.js @twin
        */
-      function iWrite(_store,_data,_update,_options){
+      function iWrite(_store,_data,_update,_options,_callback){
          var crud;
          var deferred = $q.defer(),promise=deferred.promise;
 
@@ -817,6 +859,7 @@ function online($resource,$http,$q) {
          request.onsuccess=function(e){
             if(_options && _options.display===false); else iyona.info("Successfully "+crud+" write to "+store,_data);
             that.offlineStorage(_data,_store,crud,_options);
+            if(typeof _callback ==='function')_callback(e);
             deferred.resolve(e);};
          //transaction.oncomplete=function(e){iyona.on("Successfully completed write transaction to "+store+"::",e);};
          request.onerror=function(e){iyona.err("Error while writing to "+store+"::"+e.target.error.message,_data);deferred.reject([e.target.error.message,store,_data,e]);};

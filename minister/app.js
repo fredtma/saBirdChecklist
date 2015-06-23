@@ -1,5 +1,6 @@
 (function(){//Use javasctipr Closures, Immediately Invoked Function Expression (IIFE) to prevent global conflicts
-   angular.module('saBirdChecklist', ['ionic', 'saBirdChecklist.controllers','saBirdChecklist.services']).config(config).run(run);
+'use strict'
+   angular.module('saBirdChecklist', ['ionic', 'saBirdChecklist.controllers','saBirdChecklist.services','saBirdChecklist.directives']).config(config).run(run);
 
    config.$inject = ["$stateProvider","$urlRouterProvider","$httpProvider","$ionicConfigProvider","$compileProvider"];
    function config($stateProvider, $urlRouterProvider, $httpProvider, $ionicConfigProvider, $compileProvider) {
@@ -20,10 +21,11 @@
       $urlRouterProvider.otherwise('/main/dashboard');
    };
 
-   run.$inject = ["$ionicPlatform"];
-   function run($ionicPlatform) {
-      ionic.Platform.isFullScreen = true;//also set the config.xml to fullscreen
+   run.$inject = ["$ionicPlatform","$rootScope","$state"];
+   function run($ionicPlatform,$rootScope,$state) {
+
       $ionicPlatform.ready(function () {
+         ionic.Platform.isFullScreen = true;//also set the config.xml to fullscreen
          // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard for form inputs)
          if (window.cordova && window.cordova.plugins.Keyboard) {cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);}
          // org.apache.cordova.statusbar required
@@ -42,6 +44,19 @@
             localStorage.offline= new Date().format('isoDateTime');
             iyona.msg("Your are currently working offline",false,true);
          });
+         if (ionic.Platform.isAndroid()){
+            var body = document.getElementsByTagName("body")[0];
+            window.addEventListener("native.showkeyboard", function () {if (body.className.indexOf("keyboard-body") === -1){body.className += " keyboard-body";}});//this event tends to fire multiple times, so we just add the class if it's not already there.
+            window.addEventListener("native.hidekeyboard", function () {body.className = body.className.replace("keyboard-body", "");}); //show stuff on keyboard hide
+         }
+      });
+      $rootScope.$on("$stateChangeStart",function(event,toState,toStateParams){
+         var row = impetroUser();
+         iyona.off("StateChange",$state.current,toState,toState.name,row===false,toState.name!=="main.dashboard");
+         if(row===false && toState.name!=="main.dashboard" && toState.name!=="main.profile"){
+            event.preventDefault();
+            $state.go('main.dashboard',{},{notify:true,reload:true});//state change. reload:do not transition, notify: do not notify $stateChange
+         }
       });
    }
 })();

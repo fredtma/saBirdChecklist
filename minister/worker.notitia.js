@@ -3,7 +3,8 @@
  * No window|document|parent
  */
 var WORK = self;
-importScripts('worker.muneris.js');
+if(typeof window === "undefined"){importScripts('worker.muneris.js');}
+
 self.addEventListener('message',function(e){
    var data=e.data,cnt=0;
    var SITE_SERVICE=data.SITE_SERVICE,SITE_MILITIA=data.SITE_MILITIA;

@@ -1,10 +1,12 @@
+'use strict';
 angular.module('saBirdChecklist.controllers', [])
 .controller('birdsCtrl',birdsCtrl)
 .controller('dashboardCtrl',dashboardCtrl)
 .controller('listCtrl',listCtrl)
 .controller('listsCtrl',listsCtrl)
 .controller('mainCtrl',mainCtrl)
-.controller('profileCtrl',profileCtrl);
+.controller('profileCtrl',profileCtrl)
+.controller('testCtrl',testCtrl);
 
 birdsCtrl.$inject = ['$scope','crud'];
 function birdsCtrl($scope,crud){
@@ -16,10 +18,11 @@ function dashboardCtrl($scope) {
   $scope;
 }
 
-listCtrl.$inject = ['$scope','crud','online'];
-function listCtrl($scope, crud, online) {
+listCtrl.$inject = ['$scope','crud','online','helper'];
+function listCtrl($scope, crud, online,helper) {
 
-   $scope.$on("newForm",newForm);
+   var gps,gpsPromise=helper.gps().catch(function(){iyona.msg("GPS were not captured");});
+   $scope.$on("clearForm",clearForm);
    $scope.$on("readyForm",readyForm);
 
    $scope.father = {user: impetroUser().operarius};
@@ -42,12 +45,14 @@ function listCtrl($scope, crud, online) {
          function addLink(){
             var tmp;
             if(isNull){//create the new link||gerund in father's
-               var newRow={from_list:$scope.father.name, bird:child.name, list:$scope.father.jesua, description:"", location:"", created: new Date().format('isoDateTime'), modified: new Date().format('isoDateTime')};
+
+               var newRow={from_list:$scope.father.name, bird:child.name, list:$scope.father.jesua, gps:gps, description:"", location:"", created: new Date().format('isoDateTime'), modified: new Date().format('isoDateTime')};
                if(!isset(data.links_['linkBird'].rows))data.links_['linkBird'].rows = [];//make link an array wen empty
 
+               iyona.off("ALPHA",tmp,child,$scope.father.jesua,data.links_['linkBird'].rows);
                tmp = objSearch(data.links_['linkBird'].rows,child.name,'bird'); //check if it does not already exist, so that it is not added
-                iyona.off("ALPHA",tmp,child,$scope.father.jesua,data.links_['linkBird'].rows);
                if(tmp===false){ data.links_['linkBird'].rows.push(newRow); iyona.off("Added row");}
+
             }else{
                tmp = objSearch(data.links_['linkBird'].rows,child.name,'bird');
                iyona.off("DELETE",tmp,child,$scope.father.jesua,data.links_['linkBird'].rows);
@@ -58,8 +63,19 @@ function listCtrl($scope, crud, online) {
          }
       };//linkOnlineCtrl
    }
-   function newForm(data,notitia){}
-   function readyForm(data,notitia){iyona.off("Form Ready");
+   function clearForm(data,notitia){
+      gpsPromise.then(function(position){iyona.off("New Form",position);
+         $scope.father.gps=gps=position.latitude+','+position.longitude;
+         getMapLocation('map_location',position, function(results){$scope.father.description= "Located in "+results.city.locality+", "+results.city.country+".";} );
+      });
+   }
+   function readyForm(data,notitia){iyona.off("Form Ready",data,notitia);
+      gpsPromise.then(function(position){iyona.on('position',position);
+         gps = position.latitude+','+position.longitude;
+         $scope.father.gps= $scope.father.gps? $scope.father.gps: gps;//@set GPS
+         getMapLocation('map_location',position);//@set gps map
+      });
+      $scope.display.dates = notitia.iota[0].date_from? true: false;//@set display dates
       if($scope.father.links_ && !$scope.father.links_.ales)online.$idb.then(function($idb){$idb.read('ales',null).then(function(result){ $scope.father.links_.ales={rows:result}; }); });//wen ales empty fetch from document
       else if(!$scope.father.links_) iyona.info("The links_ property has not been setup.");
    }
@@ -79,18 +95,30 @@ function mainCtrl($scope, online, helper) {
    angular.extend($scope,{"module":{},"service":{"attempt":0},"father":{}});
 
    $scope.logoff        = function(){ helper.logoff($scope);};
-   $scope.onlineSync    = onlineSync;
-   $scope.module.forgot = callBack;
+   //$scope.onlineSync    = onlineSync;
+   $scope.module.forgot = forgot;
    $scope.module.login  = login;
    $scope.module.reg    = register;
+   $scope.service.row   = row;
 
    //LOGIN CHECK
-   if(!row.operarius||false){row=null;helper.loginModal($scope);}
+   if(!row.operarius||false){row=null;$scope.service.modal = helper.loginModal($scope);}
    else {online.principio(row.nominis);/*start DB*/ $scope.profile = {"operarius":row.operarius,"givenname":row.nominis,"position":row.mail,"avatar":row.avatar||"img/default.jpg","jesua":row.jesua};}
 
-   function callBack () {}
+   function forgot(){
+      $scope.service.forgot=true;
+      $scope.service.msg=" - Enter your email address and Press Forgot.";
+      return online.post(dynamis.get("SITE_ALIQUIS"),{"militia":"oblitus","u":$scope.father.username}).then(function(server){
+         if(!isset(server.mail)) {var msg="We could not find your account on the system.";$scope.service.msg=msg; iyona.msg(msg); return false;}
+         var clss=server.mail.status?" success":" danger bold";
+         $scope.service.msg = server.mail.msg;
+         iyona.msg(server.mail.msg,false,clss);
+         return server;
+      });
+   }
    function login(){
       var u,p,aliquis,msg="Please enter the username/password.";
+      if($scope.service.forgot===true){$scope.service.forgot=false; return false;}
 
       u=$scope.father.username;p=md5($scope.father.password);//aliquis
       if(!u || !p) {$scope.service.msg = msg; iyona.msg(msg); return false;}
@@ -114,29 +142,29 @@ function mainCtrl($scope, online, helper) {
    };
    function register(){
       $scope.modal.hide();
-      online.principio('registration');//start and set local db
+      $scope.service.$idb = online.principio('registration');//start and set local db
       helper.goTo('main.profile',{jesua:'new'});
    }
-
 }
 
 profileCtrl.$inject = ['$scope','crud','$state'];
 function profileCtrl($scope,crud,$state){
-   crud.set($scope,'populus','details');//.then(function(scope){
-      $scope.module.alpha=alpha;
-      $scope.module.delta=delta;
-   //});
-   //$scope.exp = "((?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,20})";
 
-
+   $scope.$on("clearForm",clearForm);
    $scope.$on("failForm",failForm);
    $scope.$on("newForm",newForm);
    $scope.$on("readyForm",readyForm);
+   crud.set($scope,'populus','details');
+//   .then(function(scope){ iyona.on("SOCPER",scope,$scope);
+      $scope.module.alpha=alpha;
+      $scope.module.delta=delta;
+//   });
 
    function alpha(callback){profileCheck();callback.call($scope,null,{changeLocation:false});}
+   function clearForm(a,b){$scope.father.username=null;}//clean // clearForm
    function delta(callback){profileCheck();callback();}
    function failForm(e,notitia){$scope.father.password="";/* prevent md5 */}
-   function newForm(e,notitia){iyona.off("New form",e,notitia,$scope,$scope.$parent);
+   function newForm(e,notitia){iyona.on("New form",e,notitia,$scope,$scope.$parent);
       if(notitia.transaction==="Alpha") {
          registerUser({"username":$scope.father.email,"aditum":[],"name":$scope.service.name,"jesua":$scope.father.jesua,"procurator":0,"sess":null,"email":$scope.father.email});//will set the USER_NAME & setting.config()
          iyona.msg("Hello and welcome "+$scope.service.name,true);
@@ -164,3 +192,5 @@ function profileCtrl($scope,crud,$state){
    }
 }
 
+testCtrl.$inject = ['$scope'];
+function testCtrl($scope){$scope.test="Hello Jesus :-)";}

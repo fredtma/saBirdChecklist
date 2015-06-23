@@ -7,11 +7,11 @@
             <a class="item item-thumbnail-left">
                <img id="profileImg" class="captureImg link" ng-src="{{father.img.alpha||'img/default.jpg'}}" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')" />
                <button class="button icon-left ion-upload button-clear button-dark" ng-click="module.getPicture($event,'img','#profileFile','profile.jpg')">Upload image</button>
-               <h2>Avatar</h2><p>Tap image to edit.</p>
+               <h2>Avatar</h2><p>Tap image to upload new image.</p>
             </a>
-            <input id="profileFile" name="profileFile" type="file" accept="image/jpeg" style="display:none" multiple placeholder="Profile Image" onchange="angular.element(this).scope().module.getPicture(event,'img',null,'profile.jpg')" />
+            <input id="profileFile" name="profileFile" type="file" onchange="angular.element(this).scope().module.getPicture(event,'img',null,'profile.jpg')" accept="image/jpeg" style="display:none" multiple />
             <div class="item item-icon-left item-divider"><i class="icon ion-ios7-person-outline"></i>Profile Details</div><label class="item item-input item-floating-label">
-            <span class="input-label">Name & Surname</span><input required autofocus type="text" placeholder="Profile's Name" ng-model="service.name" name="name" autocomplete="name" ng-model-options="{ updateOn: 'blur' }" /></label>
+            <span class="input-label">Name & Surname</span><input required type="text" placeholder="Profile's Name" ng-model="service.name" name="name" autocomplete="name" ng-model-options="{ updateOn: 'blur' }" /></label>
             <label class="item item-input item-floating-label"><span class="input-label">Email (Username)</span><input required type="email" placeholder="Your Email" ng-model="father.email" name="email" autocomplete="email"  /></label>
             <label class="item item-input item-floating-label" ng-if="!father.jesua">
                <span class="input-label">Password <small class="assertive" ng-if="dataForm.password.$error.pattern">({{service.patterns.pass1[1]}}).</small></span>

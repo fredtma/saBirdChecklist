@@ -12,7 +12,7 @@
                <span class="input-label">Username</span>
                <input type="text" ng-model="father.username" placeholder="Enter your email or username" required autofocus autocomplete="email">
             </label>
-            <label class="item item-input item-floating-label" style="background-color: transparent">
+            <label ng-if="!service.forgot" class="item item-input item-floating-label" style="background-color: transparent">
                <span class="input-label">Password</span>
                <input type="password" ng-model="father.password" placeholder="Enter your password" required>
             </label>

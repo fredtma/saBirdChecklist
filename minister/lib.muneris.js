@@ -32,6 +32,7 @@ configuration.prototype.config=function(){
    var isChrome=(typeof chrome !== "undefined" && typeof chrome.app.window!=="undefined");
    var i = (navigator.platform==='Win32')? 'i/': (isChrome||window.isMobile)?'': 'i/';
    var conf;
+   var caecus = {"ales":{"creation":{"name":{"unique":true},"fullname":{"ndx":"ndxAlesFullName"}},"details":{"title":"Bird Details"},"list":{"title":"Bird's List","module":["reorderItem"],"action":[]}},"album":{"creation":{"name":{"ndx":"ndxAlbumName"},"user":{"ndx":"ndxAlbumUser"}},"details":{"title":"Diary List details","module":["action","initForm","getPicture","linkOnline","linkUpline"],"links_":{},"action":[]},"list":{"title":"Diary List","module":["action","reorderItem"],"action":[{"text":"<i class='icon ion-ios-list' i></i> New List","goto":{"call":"main.list","params":{"jesua":"new"}}}],"links_":{}}},"caecus":{"creation":{"created":{"ndx":"ndxCaecusCreated"},"store":{"ndx":"ndxCaecusStore"},"vita":{"ndx":"ndxCaecusVita"}}},"populus":{"creation":{"firstname":{"ndx":"ndxPopulusName"},"username":{"unique":true},"email":{"unique":true}},"details":{"title":"Profile details","module":["action","enumWalk","initForm","getPicture","showMe"],"action":[],"links_":{}},"list":{"title":"Profile List","module":["action","reorderItem"],"action":[],"links_":{}}}};
 
    sessionStorage.startTime   = new Date().getTime();
    sessionStorage.runTime     = new Date().getTime();
@@ -69,12 +70,15 @@ configuration.prototype.config=function(){
       "chromeApp":      (typeof chrome !== "undefined" && typeof chrome.app.window!=="undefined")
    };
    conf.Worker    = (1)? conf.Worker: false;//disable worker
-   sessionStorage.SITE_ONLINE  = (1)? sessionStorage.SITE_ONLINE: false;
+   sessionStorage.SITE_ONLINE  = (1)? sessionStorage.SITE_ONLINE: false;//the first time it will be empty and set in the function checkConnection.
 
    sessionStorage.SITE_CONFIG   = JSON.stringify(conf);
-   iyona.sync({"url":sessionStorage.SITE_CAECUS,"method":"get","format":"json","callback":function(data){iyona.off("eternalScope::",data);
-      dynamis.set("eternal",data,true);
-   }});
+   if(!localStorage.eternal){dynamis.set("eternal",caecus,true)}
+   else{//get from online for the latest file
+      iyona.sync({"url":sessionStorage.SITE_CAECUS,"method":"get","format":"json","callback":function(data){iyona.off("eternalScope::",data);
+         dynamis.set("eternal",data,true);
+      }});
+   }
    dynamis.set("EXEMPLAR",{
       "username":["^[A-Za-z0-9_]{6,15}$","requires at least six alpha-numerique character"],
       "pass1":["((?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{6,20})","requires upperCase, lowerCase, number and a minimum of 6 chars"],
@@ -105,6 +109,7 @@ configuration.prototype.config=function(){
 iyona={
    view: true,
    cons: console.log,
+   dir: console.dir,
    stack:function(){
       var isChrome = navigator.userAgent.indexOf("Chrome") !== -1;
       if(isChrome||false){
@@ -122,19 +127,21 @@ iyona={
          else console.log(arguments[x]);
       }
    },
-   info: function(){
-      var a=arguments,l = a.length++;
-      a[l]=this.stack();
-      var color='background:#0099ff;color:#efefef;width:100%;display:block;font-weight:bold;';
-      if(a[1]==='black') color = 'background:#000000;color:#efefef;width:100%;display:block;font-weight:bold;';
-      console.info('%c'+a[0]+" "+a[l],color);
-      if(a[1]!=='black' && a.length>2)console.dir(a[1]);
+   info: function(){//display information with a color set on argument [1]
+      var a=arguments,len = a.length++;
+      a[len]=this.stack();
+      var col= (typeof a[1]==='string' && isfull(a[1]) && a.length>2 )? a[1]:'black',color;//must be a string, not an obj and more than 2 args
+      color = 'background:'+col+';color:#efefef;width:100%;display:block;font-weight:bold;';
 
+      console.info('%c'+a[0]+" "+a[len],color);
+      if(typeof a[1]!=='string' && a.length>2)console.dir(a[1]);
+      else if(typeof a[2]!=='string' && a.length>2)console.dir(a[2]);
    },
    err: function(){
       arguments[arguments.length++]=this.stack();
+
       console.warn('%c'+arguments[0]+' '+arguments[arguments.length-1],'background:#ff0000;color:#ececec;width:100%;display:block;font-weight:bold;');
-      if(arguments[2])console.dir(arguments[1]);
+      if(arguments.length>2)console.dir(arguments[1]);
    },
    msg:  function(msg,permanent,clss,angular){ angular = angular||true;
       if(!msg) return;
@@ -142,11 +149,15 @@ iyona={
       clss=!isset(clss)||clss===true? "balanced": (clss===false||clss===0)?"assertive":clss;
       clss=permanent!==true?clss+" blink_me":clss;
       var $scopeLayout = _$("#notification").scope();
+
+      if(!isset($scopeLayout)) {this.info(msg); return false;}
       $scopeLayout.msg = {"text":msg,"clss":clss};
+
       if(permanent!==true)setTimeout(function(){
          $scopeLayout.$apply(function(){$scopeLayout.msg = false;});
          if(!angular)_$("#notification").html("").removeClass('blink_me');
       },3000);
+
       if(!angular)_$("#notification").html(msg).removeClass().addClass(clss);
    },
    on:  function(){
@@ -154,7 +165,8 @@ iyona={
       if(window.isMobile===false || true){
          arguments[arguments.length++]=this.stack();
          arguments[arguments.length++]=new Date().getTime();
-         this.cons.apply(console,arguments);
+         if(arguments.length>3)this.cons.apply(console,arguments);
+         else this.dir.apply(console,arguments);
       } else {
          var arg;
          arguments[arguments.length++]=this.stack();
@@ -231,6 +243,27 @@ dynamis={
 //============================================================================//
 (function(){(new configuration()).config(); })();//run the configurations
 _$=function(element){if(typeof element==="string")return angular.element(document.querySelectorAll(element)); else return angular.element(element);};
+//============================================================================//
+/**
+ * define object property
+ * @param {bool} configurable - default false; if not true, the property can't be deleted; attempt to delete is ignored without error!
+ * @param {bool} enumerable - default false; if true, it will be iterated in for(var i in theObject); if false, it will not be iterated, but it is still accessible as public
+ * @param {function} get - must be a function; its return value is used in reading the property; if not specified, the default is undefined, which behaves like a function that returns undefined
+ * @param {function} set - must be a function; its parameter is filled with RHS in assigning a value to property; if not specified, the default is undefined, which behaves like an empty function
+ * @param {mixed} value - default undefined; if writable, configurable and enumerable (see below) are true, the property behaves like an ordinary data field
+ * @param {bool} writable - default false; if not true, the property is read only; attempt to write is ignored without error!
+ * @param {type} obj - the object that will receive the property
+ * @param {type} prop - the field of the object
+ * @param {type} opt - the options for the property
+ * @returns null
+ */
+function createProperty(obj, prop, opt){
+   var curVal = obj[prop];//this overwrite the property
+   var tmp = {configurable:true, enumerable: true, value: curVal, writable:true,get:function(){return curVal;},set:function(val){curVal=val;}};
+   opt = angular.extend({},tmp,opt);
+   Object.defineProperty(obj, prop, opt);
+}
+
 //============================================================================//
 /*
  * check if the browser supports html5 validation
@@ -357,11 +390,11 @@ function readWorker(notitiaWorker,callback){
  * @return void
  */
 function callWorker(option,callback){
-   var ext=(typeof $!=="undefined")?$.extend:angular.extend,moli=screen.height*screen.width;
+   var ext=(typeof $!=="undefined")?$.extend:angular.extend,moli=screen.height*screen.width,impetro=impetroUser();
    var opt=ext({},
       {
-         "procus":impetroUser().operarius,
-         "jesua":impetroUser().jesua,
+         "procus":impetro.operarius,
+         "jesua":impetro.jesua,
          "moli":moli,
          "SITE_AURA":sessionStorage.SITE_AURA,
          "DB_VERSION":sessionStorage.DB_VERSION,
@@ -371,18 +404,22 @@ function callWorker(option,callback){
          "SITE_MILITIA":sessionStorage.SITE_MILITIA
       },option);//ce si vas limiter l'access a ceux qui sont enregistrer seulment.
 
-   if(window.Worker&&(impetroUser()||true) ){
-      var notitiaWorker=new Worker("minister/worker.notitia.js");
+   if(window.Worker&&(impetro||true) ){
+      var notitiaWorker;
+      if(window.uTesting){notitiaWorker=new Worker("http://localhost:"+window.uTesting+"/absoluteC:/wamp/www/saBirdChecklist/www/minister/worker.notitia.js");}
+      else {notitiaWorker=new Worker("minister/worker.notitia.js");}
+
       notitiaWorker.postMessage(opt);
       readWorker(notitiaWorker,callback);
    } else iyona.info("you are not log in.");
 }
 //============================================================================//
-function registerUser(row){
+function registerUser(row,register){
    var USER_NAME={"operarius":row.username,"licencia":row.aditum,"nominis":row.name,"jesua":row.jesua,"procurator":row.procurator,"cons":row.sess,"mail":row.email,"avatar":row.img};
+   register = register||true;
    //dynamis.set("USER_NAME",USER_NAME);
    dynamis.set("USER_NAME",USER_NAME,true);//todo:add the remember me option
-   (new configuration()).config();//when login in run setup of default setting, necessary incase of logoff
+   if(register) (new configuration()).config();//when login in run setup of default setting, necessary incase of logoff
 }
 //============================================================================//
 /*
@@ -438,6 +475,76 @@ function checkConnection() {
    return tmp;
 
 }
+/**
+ * gets the geolocation of the user based upon HTML5 api
+ * @param {object} opt the object containing the option for the geolocation to use
+ * @param {function} callback the callback that will receive the geolocation
+ * @returns void
+ */
+function getCurrentPosition(opt,callback){
+   opt = opt||{enableHighAccuracy: true,maximumAge:1000*60*10};
+   if(typeof navigator.geolocation!="undefined"){
+      navigator.geolocation.getCurrentPosition(callback,locationError,opt);//@location: lib.muneris.js
+   } else {
+      iyona.msg("This device does not support GPS location");
+   }
+}
+/**
+ * Display a google map location based upon gps location
+ * @param {string} id the id of the element where the map will be displayed
+ * @param {object} gps the geolocation object
+ * @returns void
+ */
+function getMapLocation(id,gps,callback){
+   var canvas  = document.getElementById(id);
+   var pos     = new google.maps.LatLng(gps.latitude,gps.longitude);
+   var map     = new google.maps.Map(canvas,{zoom:15,center:pos,mapTypeControl:true,navigationControlOptions: {style: google.maps.NavigationControlStyle.SMALL}, mapTypeId: google.maps.MapTypeId.HYBRID});
+   var wind    = new google.maps.InfoWindow({position:pos,map:map,content:"You are here! (accuracy at "+gps.accuracy+" meter radius)"});
+   if(typeof callback==="function"){ getMapCity(gps,callback); }
+//   var marker  = new google.maps.Marker({position: pos, map: map, content:"You are here! (at least within a "+gps.accuracy+" meter radius)"});
+}
+function getMapCity(gps,callback){
+   var latLng = new google.maps.LatLng(gps.latitude,gps.longitude);
+   var geocoder = new google.maps.Geocoder();
+   var obj={},x=0,l,node;
+   geocoder.geocode({'latLng':latLng},function(results,status){
+      iyona.off(results,google.maps.GeocoderStatus.OK,"GPS=",gps);
+      if(status === google.maps.GeocoderStatus.OK){
+         l = results[0].address_components.length;
+         obj.address = results[0].formatted_address;
+         obj.place_id= results[0].place_id;
+         obj.city = {};
+         for(;x<l;x++){
+            node = results[0].address_components[x];
+            obj.city[node.types[0]] = node.long_name;
+         }
+         callback(obj);
+      }
+   });
+}
+/**
+ * the error function used to display when there a geolocation error.
+ * @param {int} error the error code from the geolocation api
+ * @returns {String} the message
+ */
+function locationError(error) {
+   var msg;
+   switch (error.code) {
+      case error.PERMISSION_DENIED:
+         msg = "User denied the request for Geolocation.";
+         break;
+      case error.POSITION_UNAVAILABLE:
+         msg = "Location information is unavailable.";
+         break;
+      case error.TIMEOUT:
+         msg = "The request to get user location timed out.";
+         break;
+      case error.UNKNOWN_ERROR:
+         msg = "An unknown error occurred.";
+         break;
+   }
+   return msg+"-"+error.message;
+}
 //============================================================================//
 /**
  * used to display message when system sync
@@ -476,7 +583,7 @@ function objSearch(ele,value,field){
          if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,key];
       }
    }
-   if(field){
+   if(field && isset(ele)){
       obj=ele[field];
       if(typeof obj==="string"&&obj.indexOf(value)!==-1 ) return [ele,field];
    }
@@ -647,6 +754,23 @@ function eternalCall(node,display){
 function objMerger(first, second) {
     for (var key in second) { if(isset(second[key]) )first[key]=second[key];}
 }
+function mergeDeep(obj1,obj2){ // Our merge function
+    var result = {}; // return result
+    for(var i in obj1){      // for every property in obj1 
+        if((i in obj2) && (typeof obj1[i] === "object") && (i !== null)){
+            result[i] = mergeDeep(obj1[i],obj2[i]); // if it's an object, merge   
+        }else{
+           result[i] = obj1[i]; // add it to result
+        }
+    }
+    for(i in obj2){ // add the remaining properties from object 2
+        if(i in result){ //conflict
+            continue;
+        }
+        result[i] = obj2[i];
+    }
+    return result;
+}
 //============================================================================//
 function exit(msg) {msg = msg||"Something went badly wrong!";if (window.stop)window.stop(); throw new Error(msg);}
 //============================================================================//
@@ -668,7 +792,7 @@ function isset() {
  * Used to retrieve the value of a variable that is not an object
  */
 function isfull(val){
-   if(typeof val!=="object" && typeof val!=="undefined" && val!==null) return true; else return false;
+   if(typeof val!=="object" && typeof val!=="undefined" && val!==null && val!=='') return true; else return false;
 }
 //============================================================================//
 //check element structure to find value in current form and alpha form
